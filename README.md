@@ -2,7 +2,7 @@
 
 A hands-on Quality Engineering portfolio: test suites for a SaaS web application, covering its UI and its REST API (`/api/v1`).
 
-> Status: placeholder. The test suites below are planned and not built yet.
+> Status: Playwright is configured. No tests or page objects yet; the suites below are planned.
 
 ## Planned areas
 
@@ -22,3 +22,24 @@ A hands-on Quality Engineering portfolio: test suites for a SaaS web application
 
 - Prefer accessible, semantic selectors over test IDs.
 - Keep each suite independent, reproducible, and runnable locally and in CI.
+
+## Setup
+
+Requirements: Node.js 20.12+ (see `.nvmrc`), pnpm 10, and the application under test running (by default `http://localhost:3000`).
+
+```bash
+pnpm install
+pnpm browsers                # installs Chromium, Firefox and WebKit
+cp .env.example .env         # optional: point BASE_URL at another environment
+```
+
+| Script | What it does |
+| --- | --- |
+| `pnpm test` | Runs every Playwright project |
+| `pnpm test:headed` / `pnpm test:ui` | Headed run / Playwright UI mode |
+| `pnpm report` | Opens the last HTML report |
+| `pnpm typecheck` | TypeScript check |
+
+### Playwright configuration
+
+`playwright.config.ts` sets `BASE_URL` (default `http://localhost:3000`), four projects (Chromium, Firefox, WebKit, Pixel 7), traces on first retry, screenshots and videos kept only for failures, a fixed `en-US` locale and `UTC` time zone, and CI behavior (retries, `forbidOnly`, GitHub and JUnit reporters) switched on by the `CI` variable. Tests go in `tests/`.

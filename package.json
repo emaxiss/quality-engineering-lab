@@ -1,0 +1,24 @@
+{
+  "name": "quality-engineering-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Quality Engineering portfolio: UI, API, contract, performance and accessibility test suites.",
+  "type": "module",
+  "packageManager": "pnpm@10.30.3",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report",
+    "browsers": "playwright install --with-deps",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^24.19.0",
+    "typescript": "~5.9.3"
+  }
+}
