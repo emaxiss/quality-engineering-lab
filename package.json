@@ -6,7 +6,7 @@
   "type": "module",
   "packageManager": "pnpm@10.30.3",
   "engines": {
-    "node": ">=20.12"
+    "node": ">=20.19"
   },
   "scripts": {
     "test": "playwright test",
@@ -19,12 +19,21 @@
     "test:ui": "playwright test --ui",
     "report": "playwright show-report",
     "browsers": "playwright install --with-deps",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write src tests \"*.{ts,js,json}\"",
+    "format:check": "prettier --check src tests \"*.{ts,js,json}\"",
+    "check": "pnpm typecheck && pnpm lint && pnpm format:check"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "@pact-foundation/pact": "17.1.4",
     "@playwright/test": "1.63.0",
     "@types/node": "^24.19.0",
-    "typescript": "~5.9.3"
+    "eslint": "10.11.0",
+    "eslint-plugin-playwright": "2.12.0",
+    "prettier": "3.9.9",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "8.70.1"
   }
 }

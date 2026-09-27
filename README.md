@@ -67,6 +67,9 @@ cp .env.example .env         # then fill in both accounts
 | `pnpm test:headed` / `pnpm test:ui` | Headed run / Playwright UI mode |
 | `pnpm report` | Opens the last HTML report |
 | `pnpm typecheck` | TypeScript check |
+| `pnpm lint` | ESLint with type-aware TypeScript rules and the Playwright plugin (missing `await`, focused tests, tests without assertions) |
+| `pnpm format` / `pnpm format:check` | Prettier |
+| `pnpm check` | Types, lint and format together. CI runs it on every pull request |
 
 ## Architecture
 

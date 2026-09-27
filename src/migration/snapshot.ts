@@ -4,7 +4,7 @@ import type { APIRequestContext } from "@playwright/test";
 import { expectJson } from "@/api/assertions";
 import { ApplicationsEndpoint } from "@/api/endpoints/applications.endpoint";
 import { DashboardEndpoint } from "@/api/endpoints/dashboard.endpoint";
-import type { Application, Envelope, ListEnvelope } from "@/api/types";
+import type { Application, Envelope, ListEnvelope, ListMeta } from "@/api/types";
 import { env } from "@/config/env";
 
 export type Role = "main" | "second";
@@ -30,16 +30,17 @@ const DATE_RELATIVE_SUMMARY_FIELDS = ["activeDays"];
 export async function readAccountState(request: APIRequestContext): Promise<AccountState> {
   const applications = new ApplicationsEndpoint(request);
   const records: Application[] = [];
-  let total = 0;
-  for (let page = 1; ; page++) {
+  let page = 0;
+  let meta: ListMeta;
+  do {
+    page++;
     const body = await expectJson<ListEnvelope<Application>>(
       await applications.list({ sort: "createdAt", order: "asc", page, pageSize: 100 }),
       200,
     );
     records.push(...body.data);
-    total = body.meta.total;
-    if (page >= body.meta.totalPages) break;
-  }
+    meta = body.meta;
+  } while (page < meta.totalPages);
 
   const { data } = await expectJson<Envelope<Record<string, unknown>>>(
     await new DashboardEndpoint(request).summary(),
@@ -49,7 +50,7 @@ export async function readAccountState(request: APIRequestContext): Promise<Acco
     Object.entries(data).filter(([key]) => !DATE_RELATIVE_SUMMARY_FIELDS.includes(key)),
   );
 
-  return { total, records: records.sort((a, b) => a.id.localeCompare(b.id)), summary };
+  return { total: meta.total, records: records.sort((a, b) => a.id.localeCompare(b.id)), summary };
 }
 
 const snapshotFile = () => path.resolve(env.migrationSnapshotDir, "snapshot.json");

@@ -47,12 +47,19 @@ test.describe("migration verify", () => {
     return context;
   };
 
+  const seededRecord = (role: Role, name: string): Application => {
+    const record = snapshot.accounts[role].records.find((candidate) => candidate.company.endsWith(name));
+    if (!record) throw new Error(`The snapshot has no '${name}' record`);
+    return record;
+  };
+
   test("keeps every record, and adds none", () => {
     for (const role of ["main", "second"] as const) {
       expect(after[role].total, role).toBe(snapshot.accounts[role].total);
-      expect(after[role].records.map((record) => record.id), role).toEqual(
-        snapshot.accounts[role].records.map((record) => record.id),
-      );
+      expect(
+        after[role].records.map((record) => record.id),
+        role,
+      ).toEqual(snapshot.accounts[role].records.map((record) => record.id));
     }
   });
 
@@ -78,8 +85,7 @@ test.describe("migration verify", () => {
 
   test("migrated records can still be updated, filtered, sorted and deleted", async () => {
     const applications = new ApplicationsEndpoint(account("main"));
-    const before = snapshot.accounts.main.records.find((record) => record.company.endsWith("Page filler A"));
-    if (!before) throw new Error("The snapshot has no 'Page filler A' record");
+    const before = seededRecord("main", "Page filler A");
 
     const { data: updated } = await expectJson<Envelope<Application>>(
       await applications.update(before.id, { title: "Updated after the upgrade", status: "APPLIED" }),
