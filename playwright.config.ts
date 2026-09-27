@@ -58,6 +58,14 @@ export default defineConfig({
     // Sign-in is rate limited per IP, so each runs once.
     { name: "auth-api", testMatch: apiAuthSpec },
     { name: "auth", testMatch: authSpec, dependencies: ["auth-api"], use: { ...devices["Desktop Chrome"] } },
+    // Upgrade tests: seed runs against the version before an upgrade, verify against the one after.
+    // Only defined for the migration scripts, so they never join a normal run.
+    ...(process.env.MIGRATION
+      ? [
+          { name: "migration-seed", testMatch: /migration\/seed\.spec\.ts/, dependencies: ["setup"] },
+          { name: "migration-verify", testMatch: /migration\/verify\.spec\.ts/, dependencies: ["setup"] },
+        ]
+      : []),
     ...browserProjects.map(({ name, device }) => ({
       name,
       testMatch: /ui\/.*\.spec\.ts/,

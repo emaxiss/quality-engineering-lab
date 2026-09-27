@@ -23,6 +23,18 @@ export const env = {
   get loginUserPassword(): string {
     return required("E2E_LOGIN_USER_PASSWORD");
   },
+  /** Base path of the applications API. Override to test a build that serves it elsewhere. */
+  get applicationsApiPath(): string {
+    return process.env.APPLICATIONS_API_PATH ?? "/api/v1/opportunities";
+  },
+  /** Where the migration seed phase writes its snapshot and the verify phase reads it. */
+  get migrationSnapshotDir(): string {
+    return process.env.MIGRATION_SNAPSHOT_DIR ?? "migration-snapshots";
+  },
+  /** Paths an upgrade removed, comma-separated. The verify phase expects each to answer 404. */
+  get migrationRemovedPaths(): string[] {
+    return (process.env.MIGRATION_REMOVED_PATHS ?? "").split(",").map((p) => p.trim()).filter(Boolean);
+  },
 };
 
 export const AUTH_STATE_PATH = "playwright/.auth/user.json";

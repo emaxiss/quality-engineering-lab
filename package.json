@@ -13,6 +13,8 @@
     "test:smoke": "playwright test --grep @smoke",
     "test:cross-browser": "CROSS_BROWSER=1 playwright test",
     "test:contract": "playwright test --project=contract-consumer --project=contract-provider",
+    "test:migration:seed": "MIGRATION=1 playwright test --project=migration-seed",
+    "test:migration:verify": "MIGRATION=1 playwright test --project=migration-verify",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "report": "playwright show-report",
