@@ -4,7 +4,7 @@ A hands-on Quality Engineering portfolio: test suites for a SaaS web application
 
 **Application under test:** https://rolequeue.vercel.app (open to anyone: sign up, or use "Try the demo" for a private account with sample data).
 
-> Status: Playwright page objects, fixtures, a UI smoke suite, an API suite, Pact contract tests and database migration tests are in place. The other areas below are planned.
+> Status: Playwright page objects, fixtures, a UI smoke suite, an API suite with response schemas, cross-user isolation tests, Pact contract tests, database migration tests and WCAG accessibility scans are in place. The other areas below are planned.
 
 ## Findings and decisions
 
@@ -14,6 +14,7 @@ What testing this application surfaced, and how it shaped the suites.
 | --- | --- |
 | **Logging out with a bearer token did not end the session (fixed).** `POST /api/v1/auth/logout` answered 204, but the token kept authorizing requests until it expired, about an hour later. Logging out with the session cookie did end the session. | Found by `tests/api/auth.spec.ts`, which asserted the correct behavior under a `test.fail()` marker. When the fix shipped, the marked test passed, the run reported "expected to fail, but passed", and the marker was removed. The test now guards against the defect coming back. |
 | **Logging out ends every session of the account**, not just the current one, with the session cookie or a bearer token. | The log in and log out tests use a dedicated account, so they can never sign out the session the rest of the suite shares, and the tests on that account run one after the other. Once bearer logout was fixed, a parallel run let the logout test end the token another test was still using. |
+| **Three color contrast failures (WCAG 2.2 AA, 1.4.3).** The current page in the sidebar (3.74:1), the date line on the dashboard (4.36:1) and the P0 badge in the landing page preview (4.22:1) are below 4.5:1. | Found by the accessibility scans, which list them as known issues: they are reported on every run, anything new fails the scan, and a known issue that stops reproducing fails too, so the list stays current. Scanning before animations finish reports around 30 false contrast failures on the dashboard, so the scans wait for them to finish. |
 | **Sign-in is rate limited per IP.** | The suite signs in once and reuses the session. Only the log in and log out tests sign in on their own, so a full run stays well inside the limit. |
 
 Design decisions:
@@ -30,7 +31,7 @@ Design decisions:
 | **API testing** | Contract-level checks of `/api/v1`: status codes, response shapes, validation errors (in place, see below) |
 | **Pact contract testing** | Consumer-driven contracts between an API client and the API (in place, see below) |
 | **Performance testing** | Load and stress profiles with k6 against list, detail and dashboard endpoints |
-| **Accessibility** | Automated WCAG checks with axe, plus keyboard and screen reader flows |
+| **Accessibility** | Automated WCAG 2.2 AA checks with axe (in place, see below), plus keyboard and screen reader flows |
 | **Visual testing** | Screenshot comparison for key pages and states |
 | **CI/CD** | Pipelines that boot the app and its dependencies and run every suite on each change |
 | **Security-oriented testing** | Authorization and tenant isolation (cross-user access, in place), auth edge cases, input handling |
@@ -86,6 +87,7 @@ src/
     types.ts            types inferred from the schemas, plus request types
   data/                 factories for unique test data
   contracts/            Pact consumer client, pact settings, provider states
+  a11y/                 axe scan helper and the known accessibility issues
   migration/            upgrade-test dataset and account snapshots
   fixtures/test.ts      test.extend: page objects and API clients as fixtures
 tests/
@@ -96,6 +98,7 @@ tests/
     provider/           verifies the contract against the live API
   migration/            seed and verify phases of an upgrade test
   ui/                   browser specs
+  a11y/                 accessibility scans
 ```
 
 - **Page objects** expose locators and user actions. Each defines `expectLoaded()`, the one assertion it owns; every other assertion lives in the spec.
@@ -114,6 +117,7 @@ tests/
 | `auth-api` | `tests/api/auth.spec.ts` | Login account, no browser |
 | `auth` | `tests/ui/auth.spec.ts` | Login account, desktop Chrome. Runs after `auth-api`: logging out ends every session of the account, so the two must not overlap |
 | `isolation-api` | `tests/api/isolation.spec.ts` | Main account plus the login account as a second user. Runs after `auth`, so no logout can end its session mid-test |
+| `a11y` | `tests/a11y/` | Desktop Chrome. Depends on `setup` |
 | `chromium` | the rest of `tests/ui/` | Depends on `setup` |
 | `firefox`, `webkit`, `mobile-chrome` | the rest of `tests/ui/` | Only with `CROSS_BROWSER` set. Depend on `setup` |
 | `contract-consumer` | `tests/contract/consumer/` | No network. Writes `pacts/` (git-ignored) |
@@ -171,6 +175,16 @@ Consumer-driven contract tests for the applications API, using Pact specificatio
 | Read an application that does not exist | none | 404 `NOT_FOUND` |
 | Create without a company | none | 400 `VALIDATION_ERROR` |
 | List without a token | none | 401 `UNAUTHORIZED` |
+
+## Accessibility
+
+`tests/a11y/pages.spec.ts` scans the landing and login pages signed out, and the dashboard, the applications board and list, the add application dialog and settings signed in, with [axe](https://github.com/dequelabs/axe-core) against WCAG 2.2 A and AA.
+
+- Scans wait for running animations to finish, so colors are measured as the user sees them once the page settles.
+- Every violation, with the failing elements, is attached to the HTML report as `axe-violations.json`.
+- Known issues (`src/a11y/known-issues.ts`) are matched by rule and the element's visible text, not by CSS classes, and show up as annotations on the test. A new violation fails the scan, and so does a known issue that no longer reproduces.
+
+Automated rules cover only part of WCAG. Keyboard and screen reader flows are planned.
 
 ## Database migration tests
 
