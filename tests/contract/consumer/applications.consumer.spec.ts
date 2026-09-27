@@ -3,7 +3,7 @@ import { ApiError, ApplicationsClient } from "@/contracts/applications.client";
 import { CONSUMER, CONTRACT_COMPANY, PACT_DIR, PROVIDER, States } from "@/contracts/pact.config";
 import { expect, test } from "@playwright/test";
 
-const { eachLike, fromProviderState, integer, regex, string, uuid } = MatchersV3;
+const { atLeastLike, eachLike, fromProviderState, integer, regex, string, uuid } = MatchersV3;
 
 const EXAMPLE_ID = "5f0c1a52-8c7e-4b5f-9a3e-2d1f6b7c8a90";
 const UNKNOWN_ID = "00000000-0000-4000-8000-000000000000";
@@ -20,7 +20,8 @@ const application = {
   title: string("QA Engineer"),
   status: regex(/^(SAVED|APPLIED|INTERVIEW|OFFER|REJECTED|WITHDRAWN|ARCHIVED)$/, "SAVED"),
   priority: regex(/^P[0-2]$/, "P1"),
-  tags: eachLike(string("contract")),
+  // Any number of tags, including none.
+  tags: atLeastLike(string("contract"), 0, 1),
   createdAt: timestamp,
   updatedAt: timestamp,
 };
