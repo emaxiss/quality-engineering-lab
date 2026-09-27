@@ -1,10 +1,20 @@
 import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
+import { AUTH_STATE_PATH, env } from "./src/config/env";
 
 // Local overrides (BASE_URL and friends) live in an untracked .env file. CI sets real env vars.
 if (existsSync(".env")) process.loadEnvFile(".env");
 
 const isCI = !!process.env.CI;
+
+const authSpec = /ui\/auth\.spec\.ts/;
+
+const browserProjects = [
+  { name: "chromium", device: "Desktop Chrome" },
+  { name: "firefox", device: "Desktop Firefox" },
+  { name: "webkit", device: "Desktop Safari" },
+  { name: "mobile-chrome", device: "Pixel 7" },
+];
 
 export default defineConfig({
   testDir: "./tests",
@@ -19,7 +29,7 @@ export default defineConfig({
     ? [["github"], ["html", { open: "never" }], ["junit", { outputFile: "test-results/junit.xml" }]]
     : [["list"], ["html", { open: "never" }]],
   use: {
-    baseURL: process.env.BASE_URL ?? "http://localhost:3000",
+    baseURL: env.baseURL,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -29,9 +39,16 @@ export default defineConfig({
     timezoneId: "UTC",
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
-    { name: "webkit", use: { ...devices["Desktop Safari"] } },
-    { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
+    { name: "setup", testMatch: /setup\/.*\.setup\.ts/ },
+    { name: "api", testMatch: /api\/.*\.spec\.ts/ },
+    // Signs in and out with its own account, once: sign-in is rate limited per IP.
+    { name: "auth", testMatch: authSpec, use: { ...devices["Desktop Chrome"] } },
+    ...browserProjects.map(({ name, device }) => ({
+      name,
+      testMatch: /ui\/.*\.spec\.ts/,
+      testIgnore: authSpec,
+      dependencies: ["setup"],
+      use: { ...devices[device], storageState: AUTH_STATE_PATH },
+    })),
   ],
 });
