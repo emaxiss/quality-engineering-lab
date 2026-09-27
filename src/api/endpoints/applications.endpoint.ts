@@ -10,7 +10,7 @@ export class ApplicationsEndpoint {
 
   list(query: ListQuery = {}): Promise<APIResponse> {
     const params: Record<string, string | number> = {};
-    for (const [key, value] of Object.entries(query)) {
+    for (const [key, value] of Object.entries(query) as [string, ListQuery[keyof ListQuery]][]) {
       if (value !== undefined) params[key] = Array.isArray(value) ? value.join(",") : value;
     }
     return this.request.get(this.basePath, { params });
