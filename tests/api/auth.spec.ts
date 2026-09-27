@@ -36,8 +36,6 @@ test.describe("auth api", () => {
   });
 
   test("logout with a bearer token ends the session", async ({ playwright, request, baseURL }) => {
-    test.fail(true, "Known defect: logout answers 204 for a bearer token but the token keeps working until it expires");
-
     const tokenOnly = await tokenContext(playwright, baseURL, await signIn(request));
     try {
       expect((await new AuthEndpoint(tokenOnly).logout()).status()).toBe(204);
