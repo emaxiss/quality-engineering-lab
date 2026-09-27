@@ -4,7 +4,7 @@ A hands-on Quality Engineering portfolio: test suites for a SaaS web application
 
 **Application under test:** https://rolequeue.vercel.app (open to anyone: sign up, or use "Try the demo" for a private account with sample data).
 
-> Status: Playwright page objects, fixtures, a UI smoke suite, an API suite and Pact contract tests are in place. The other areas below are planned.
+> Status: Playwright page objects, fixtures, a UI smoke suite, an API suite, Pact contract tests and database migration tests are in place. The other areas below are planned.
 
 ## Findings and decisions
 
@@ -63,6 +63,7 @@ cp .env.example .env         # then fill in both accounts
 | `pnpm test:smoke` | Runs only tests tagged `@smoke` |
 | `pnpm test:cross-browser` | Runs everything in Chromium, Firefox, WebKit and a Pixel 7 viewport |
 | `pnpm test:contract` | Generates the Pact contract, then verifies it against `BASE_URL` |
+| `pnpm test:migration:seed` / `pnpm test:migration:verify` | The two phases of an upgrade test, see [Database migration tests](#database-migration-tests) |
 | `pnpm test:headed` / `pnpm test:ui` | Headed run / Playwright UI mode |
 | `pnpm report` | Opens the last HTML report |
 | `pnpm typecheck` | TypeScript check |
@@ -81,6 +82,7 @@ src/
     types.ts            response and request types
   data/                 factories for unique test data
   contracts/            Pact consumer client, pact settings, provider states
+  migration/            upgrade-test dataset and account snapshots
   fixtures/test.ts      test.extend: page objects and API clients as fixtures
 tests/
   setup/                signs in once and saves the session
@@ -88,6 +90,7 @@ tests/
   contract/
     consumer/           consumer tests against the Pact mock server
     provider/           verifies the contract against the live API
+  migration/            seed and verify phases of an upgrade test
   ui/                   browser specs
 ```
 
@@ -110,6 +113,7 @@ tests/
 | `firefox`, `webkit`, `mobile-chrome` | the rest of `tests/ui/` | Only with `CROSS_BROWSER` set. Depend on `setup` |
 | `contract-consumer` | `tests/contract/consumer/` | No network. Writes `pacts/` (git-ignored) |
 | `contract-provider` | `tests/contract/provider/` | Depends on `contract-consumer`. Signs in once |
+| `migration-seed`, `migration-verify` | `tests/migration/` | Only with `MIGRATION` set, through the migration scripts. Depend on `setup` |
 
 Sign-in is rate limited per IP, so a full run signs in five times: `setup` once, `auth-api` twice, `auth` once, `contract-provider` once.
 
@@ -162,3 +166,36 @@ Consumer-driven contract tests for the applications API, using Pact specificatio
 | Read an application that does not exist | none | 404 `NOT_FOUND` |
 | Create without a company | none | 400 `VALIDATION_ERROR` |
 | List without a token | none | 401 `UNAUTHORIZED` |
+
+## Database migration tests
+
+An upgrade test proves that a release with a database migration keeps every record, keeps derived figures and access rules, and that the application still works on migrated data. It runs in two phases, through the API only:
+
+1. **Seed**, against the version before the upgrade: creates a fixed dataset in two accounts and saves a snapshot of everything the API reports about each account.
+2. **Verify**, against the version after the upgrade: compares both accounts with the snapshot, then exercises the migrated records.
+
+The dataset covers what a migration can break: every stage and priority, every enum value, empty optional fields, maximum lengths (200-character text, a 10,000-character description, 10 tags of 40 characters), Unicode and emoji, the lowest and highest salary and a minimum equal to the maximum, all three dates set and unset, follow-ups due and not due, several pages of records, and records in a second account.
+
+| Check | Protects against |
+| --- | --- |
+| Keeps every record, and adds none | Rows lost or duplicated while tables, keys or types are rewritten |
+| Leaves every record unchanged, timestamps included | Truncated text, mangled Unicode, lost values, and backfills that touch `createdAt` or `updatedAt` |
+| Keeps the dashboard figures | Enum or status mappings that shift records into the wrong stage or priority |
+| Keeps each account's records private | Ownership or access rules lost or rebuilt wrongly |
+| Migrated records can still be updated, filtered, sorted and deleted | Broken indexes, constraints or defaults that only show up on writes |
+| Paths the upgrade removed answer 404 | Old endpoints left serving after a rename (set `MIGRATION_REMOVED_PATHS`) |
+
+### Run an upgrade test
+
+1. Start the version before the upgrade and point `BASE_URL` at it.
+2. `pnpm test:migration:seed` writes the snapshot to `MIGRATION_SNAPSHOT_DIR` (default `migration-snapshots/`, git-ignored).
+3. Apply the migration and start the new version, with the same database and accounts.
+4. `pnpm test:migration:verify` runs the checks, then deletes the seeded records. If verify cannot start, for example because sign-in is rate limited, it keeps the data so it can simply run again.
+
+| Variable | Used for |
+| --- | --- |
+| `APPLICATIONS_API_PATH` | Base path of the applications API, when one version serves it somewhere else |
+| `MIGRATION_SNAPSHOT_DIR` | Where the snapshot is written and read |
+| `MIGRATION_REMOVED_PATHS` | Comma-separated paths the upgrade removed; each must answer 404 |
+
+Each phase signs in twice (both accounts).
