@@ -12,8 +12,8 @@ What testing this application surfaced, and how it shaped the suites.
 
 | Finding | How the suites handle it |
 | --- | --- |
-| **Logging out with a bearer token does not end the session.** `POST /api/v1/auth/logout` answers 204, but the token keeps authorizing requests until it expires, about an hour later. Logging out with the session cookie does end the session. | Covered by `tests/api/auth.spec.ts`. The test asserts the correct behavior and is marked `test.fail()`, so the suite stays green while the defect exists and turns red once it is fixed, as a reminder to remove the marker. |
-| **Logging out ends every session of the account**, not just the current one. | The log in and log out tests use a dedicated account, so they can never sign out the session the rest of the suite shares. |
+| **Logging out with a bearer token did not end the session (fixed).** `POST /api/v1/auth/logout` answered 204, but the token kept authorizing requests until it expired, about an hour later. Logging out with the session cookie did end the session. | Found by `tests/api/auth.spec.ts`, which asserted the correct behavior under a `test.fail()` marker. When the fix shipped, the marked test passed, the run reported "expected to fail, but passed", and the marker was removed. The test now guards against the defect coming back. |
+| **Logging out ends every session of the account**, not just the current one, with the session cookie or a bearer token. | The log in and log out tests use a dedicated account, so they can never sign out the session the rest of the suite shares, and the tests on that account run one after the other. Once bearer logout was fixed, a parallel run let the logout test end the token another test was still using. |
 | **Sign-in is rate limited per IP.** | The suite signs in once and reuses the session. Only the log in and log out tests sign in on their own, so a full run stays well inside the limit. |
 
 Design decisions:
@@ -141,9 +141,7 @@ Happy paths only. Negative and edge cases come later.
 
 Tests for known defects assert the correct behavior and are marked `test.fail()`, so the suite stays green while the defect exists and turns red once it is fixed, as a reminder to remove the marker.
 
-| Test | Defect |
-| --- | --- |
-| `auth api › logout with a bearer token ends the session` | Logout answers 204 for a bearer token, but the token keeps working until it expires. Logging out with the session cookie does end every session. |
+None open.
 
 ## Contract tests (Pact)
 

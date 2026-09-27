@@ -21,6 +21,10 @@ async function tokenContext(
 }
 
 test.describe("auth api", () => {
+  // Both tests sign in to the same account, and logging out ends every session of it, including
+  // the other test's token. Run them one after the other, never in parallel.
+  test.describe.configure({ mode: "default" });
+
   test("login issues a bearer token that authorizes requests", async ({ playwright, request, baseURL }) => {
     const session = await signIn(request);
     expect(session.user.email).toBe(env.loginUserEmail);
@@ -36,8 +40,6 @@ test.describe("auth api", () => {
   });
 
   test("logout with a bearer token ends the session", async ({ playwright, request, baseURL }) => {
-    test.fail(true, "Known defect: logout answers 204 for a bearer token but the token keeps working until it expires");
-
     const tokenOnly = await tokenContext(playwright, baseURL, await signIn(request));
     try {
       expect((await new AuthEndpoint(tokenOnly).logout()).status()).toBe(204);
