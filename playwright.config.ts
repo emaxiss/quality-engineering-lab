@@ -61,6 +61,13 @@ export default defineConfig({
     { name: "auth", testMatch: authSpec, dependencies: ["auth-api"], use: { ...devices["Desktop Chrome"] } },
     // Uses the login account as the second user, so it waits until both auth projects are done.
     { name: "isolation-api", testMatch: isolationSpec, dependencies: ["setup", "auth"] },
+    // WCAG 2.2 AA scans with axe. Desktop Chrome only: the rules check markup, not the engine.
+    {
+      name: "a11y",
+      testMatch: /a11y\/.*\.spec\.ts/,
+      dependencies: ["setup"],
+      use: { ...devices["Desktop Chrome"], storageState: AUTH_STATE_PATH },
+    },
     // Upgrade tests: seed runs against the version before an upgrade, verify against the one after.
     // Only defined for the migration scripts, so they never join a normal run.
     ...(process.env.MIGRATION

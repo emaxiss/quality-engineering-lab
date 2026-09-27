@@ -26,6 +26,7 @@
     "check": "pnpm typecheck && pnpm lint && pnpm format:check"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@eslint/js": "10.0.1",
     "@pact-foundation/pact": "17.1.4",
     "@playwright/test": "1.63.0",
