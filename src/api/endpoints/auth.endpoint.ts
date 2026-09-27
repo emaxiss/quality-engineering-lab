@@ -1,10 +1,5 @@
 import type { APIRequestContext, APIResponse } from "@playwright/test";
 
-export interface Session {
-  user: { id: string; email: string };
-  session: { accessToken: string; expiresAt: number };
-}
-
 export class AuthEndpoint {
   constructor(private readonly request: APIRequestContext) {}
 

@@ -1,9 +1,10 @@
 import type { APIRequestContext } from "@playwright/test";
 import { ApplicationsApi } from "@/api/applications.api";
 import { expectApiError, expectJson } from "@/api/assertions";
+import { applicationListResponse, applicationResponse } from "@/api/schemas";
 import { ApplicationsEndpoint } from "@/api/endpoints/applications.endpoint";
 import { signedInContext } from "@/api/sessions";
-import type { Application, Envelope, ListEnvelope } from "@/api/types";
+import type { Application } from "@/api/types";
 import { AUTH_STATE_PATH, env } from "@/config/env";
 import { expect, test } from "@/fixtures/test";
 import { type AccountState, loadSnapshot, readAccountState, type Role, type Snapshot } from "@/migration/snapshot";
@@ -87,25 +88,28 @@ test.describe("migration verify", () => {
     const applications = new ApplicationsEndpoint(account("main"));
     const before = seededRecord("main", "Page filler A");
 
-    const { data: updated } = await expectJson<Envelope<Application>>(
+    const { data: updated } = await expectJson(
       await applications.update(before.id, { title: "Updated after the upgrade", status: "APPLIED" }),
       200,
+      applicationResponse,
     );
     expect(updated).toMatchObject({ id: before.id, title: "Updated after the upgrade", status: "APPLIED" });
     expect(updated.appliedAt).toEqual(expect.any(String));
     expect(Date.parse(updated.updatedAt)).toBeGreaterThan(Date.parse(before.updatedAt));
 
-    const applied = await expectJson<ListEnvelope<Application>>(
+    const applied = await expectJson(
       await applications.list({ q: snapshot.marker, status: ["APPLIED"], pageSize: 100 }),
       200,
+      applicationListResponse,
     );
     expect(applied.data.map((record) => record.id)).toContain(before.id);
 
     const byCompany = async (order: "asc" | "desc") =>
       (
-        await expectJson<ListEnvelope<Application>>(
+        await expectJson(
           await applications.list({ q: snapshot.marker, sort: "company", order, pageSize: 100 }),
           200,
+          applicationListResponse,
         )
       ).data.map((record) => record.id);
     const ascending = await byCompany("asc");

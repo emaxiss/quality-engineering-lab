@@ -1,13 +1,13 @@
 import { expectApiError, expectJson } from "@/api/assertions";
+import { accountExportSchema, accountResponse } from "@/api/schemas";
 import { AccountEndpoint } from "@/api/endpoints/account.endpoint";
-import type { Account, Application, Envelope } from "@/api/types";
 import { env } from "@/config/env";
 import { buildApplication } from "@/data/application.factory";
 import { expect, test } from "@/fixtures/test";
 
 test.describe("account api", () => {
   test("returns the signed-in account", async ({ accountEndpoint }) => {
-    const { data } = await expectJson<Envelope<Account>>(await accountEndpoint.get(), 200);
+    const { data } = await expectJson(await accountEndpoint.get(), 200, accountResponse);
 
     expect(data).toMatchObject({
       id: expect.any(String),
@@ -25,11 +25,7 @@ test.describe("account api", () => {
   test("exports applications as JSON", async ({ accountEndpoint, applicationsApi }) => {
     const created = await applicationsApi.create(buildApplication());
 
-    const body = await expectJson<{
-      exportedAt: string;
-      account: { email: string };
-      opportunities: Application[];
-    }>(await accountEndpoint.export("json"), 200);
+    const body = await expectJson(await accountEndpoint.export("json"), 200, accountExportSchema);
 
     expect(body.account.email).toBe(env.userEmail);
     expect(Date.parse(body.exportedAt)).not.toBeNaN();

@@ -1,14 +1,15 @@
 import type { APIRequestContext, PlaywrightWorkerArgs } from "@playwright/test";
 import { expectApiError, expectJson } from "@/api/assertions";
+import { accountResponse, sessionResponse } from "@/api/schemas";
 import { AccountEndpoint } from "@/api/endpoints/account.endpoint";
-import { AuthEndpoint, bearer, type Session } from "@/api/endpoints/auth.endpoint";
-import type { Envelope } from "@/api/types";
+import { AuthEndpoint, bearer } from "@/api/endpoints/auth.endpoint";
+import type { Session } from "@/api/types";
 import { env } from "@/config/env";
 import { expect, test } from "@/fixtures/test";
 
 async function signIn(request: APIRequestContext): Promise<Session> {
   const response = await new AuthEndpoint(request).login(env.loginUserEmail, env.loginUserPassword);
-  return (await expectJson<Envelope<Session>>(response, 200)).data;
+  return (await expectJson(response, 200, sessionResponse)).data;
 }
 
 /** A context that authenticates with the bearer token only, no cookies. */
@@ -32,7 +33,7 @@ test.describe("auth api", () => {
 
     const tokenOnly = await tokenContext(playwright, baseURL, session);
     try {
-      const account = await expectJson<Envelope<{ email: string }>>(await new AccountEndpoint(tokenOnly).get(), 200);
+      const account = await expectJson(await new AccountEndpoint(tokenOnly).get(), 200, accountResponse);
       expect(account.data.email).toBe(env.loginUserEmail);
     } finally {
       await tokenOnly.dispose();

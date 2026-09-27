@@ -2,9 +2,10 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type { APIRequestContext } from "@playwright/test";
 import { expectJson } from "@/api/assertions";
+import { applicationListResponse, dashboardSummaryResponse } from "@/api/schemas";
 import { ApplicationsEndpoint } from "@/api/endpoints/applications.endpoint";
 import { DashboardEndpoint } from "@/api/endpoints/dashboard.endpoint";
-import type { Application, Envelope, ListEnvelope, ListMeta } from "@/api/types";
+import type { Application, ListMeta } from "@/api/types";
 import { env } from "@/config/env";
 
 export type Role = "main" | "second";
@@ -34,18 +35,16 @@ export async function readAccountState(request: APIRequestContext): Promise<Acco
   let meta: ListMeta;
   do {
     page++;
-    const body = await expectJson<ListEnvelope<Application>>(
+    const body = await expectJson(
       await applications.list({ sort: "createdAt", order: "asc", page, pageSize: 100 }),
       200,
+      applicationListResponse,
     );
     records.push(...body.data);
     meta = body.meta;
   } while (page < meta.totalPages);
 
-  const { data } = await expectJson<Envelope<Record<string, unknown>>>(
-    await new DashboardEndpoint(request).summary(),
-    200,
-  );
+  const { data } = await expectJson(await new DashboardEndpoint(request).summary(), 200, dashboardSummaryResponse);
   const summary = Object.fromEntries(
     Object.entries(data).filter(([key]) => !DATE_RELATIVE_SUMMARY_FIELDS.includes(key)),
   );
