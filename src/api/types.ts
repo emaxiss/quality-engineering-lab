@@ -26,7 +26,9 @@ export interface Application {
   updatedAt: string;
 }
 
-export type ApplicationInput = Partial<Omit<Application, "id" | "createdAt" | "updatedAt" | "companyDomain" | "logoUrl">>;
+export type ApplicationInput = Partial<
+  Omit<Application, "id" | "createdAt" | "updatedAt" | "companyDomain" | "logoUrl">
+>;
 
 export interface Account {
   id: string;

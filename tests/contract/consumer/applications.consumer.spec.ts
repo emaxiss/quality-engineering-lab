@@ -92,7 +92,9 @@ test.describe("applications api contract (consumer)", () => {
       .addInteraction()
       .given(States.applicationExists)
       .uponReceiving("a request to mark an application as applied")
-      .withRequest("PATCH", applicationPath, (request) => request.headers(authorization).jsonBody({ status: "APPLIED" }))
+      .withRequest("PATCH", applicationPath, (request) =>
+        request.headers(authorization).jsonBody({ status: "APPLIED" }),
+      )
       .willRespondWith(200, (response) =>
         response.jsonBody({ data: { ...application, status: "APPLIED", appliedAt: timestamp } }),
       )

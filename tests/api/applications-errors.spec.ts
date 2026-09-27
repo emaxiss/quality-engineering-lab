@@ -8,7 +8,11 @@ const UNKNOWN_ID = "00000000-0000-4000-8000-000000000000";
 
 test.describe("applications api errors", () => {
   test("rejects a create without a company", async ({ applicationsEndpoint }) => {
-    const error = await expectApiError(await applicationsEndpoint.create({ title: "QA Engineer" }), 400, "VALIDATION_ERROR");
+    const error = await expectApiError(
+      await applicationsEndpoint.create({ title: "QA Engineer" }),
+      400,
+      "VALIDATION_ERROR",
+    );
 
     expect(error.details).toContainEqual(expect.objectContaining({ path: "company" }));
   });

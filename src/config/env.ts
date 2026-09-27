@@ -33,7 +33,10 @@ export const env = {
   },
   /** Paths an upgrade removed, comma-separated. The verify phase expects each to answer 404. */
   get migrationRemovedPaths(): string[] {
-    return (process.env.MIGRATION_REMOVED_PATHS ?? "").split(",").map((p) => p.trim()).filter(Boolean);
+    return (process.env.MIGRATION_REMOVED_PATHS ?? "")
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
   },
 };
 

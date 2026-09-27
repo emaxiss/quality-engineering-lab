@@ -102,7 +102,12 @@ export function buildDataset(marker: string): { main: Record[]; second: Record[]
 
   const second: Record[] = [
     { company: company("Second user A"), title: "Belongs to the second account" },
-    { company: company("Second user B"), title: "Belongs to the second account", status: "APPLIED", appliedAt: APPLIED },
+    {
+      company: company("Second user B"),
+      title: "Belongs to the second account",
+      status: "APPLIED",
+      appliedAt: APPLIED,
+    },
   ];
 
   return { main, second };
