@@ -41,6 +41,12 @@ export default defineConfig({
   projects: [
     { name: "setup", testMatch: /setup\/.*\.setup\.ts/ },
     { name: "api", testMatch: /api\/.*\.spec\.ts/ },
+    { name: "contract-consumer", testMatch: /contract\/consumer\/.*\.spec\.ts/ },
+    {
+      name: "contract-provider",
+      testMatch: /contract\/provider\/.*\.spec\.ts/,
+      dependencies: ["contract-consumer"],
+    },
     // Signs in and out with its own account, once: sign-in is rate limited per IP.
     { name: "auth", testMatch: authSpec, use: { ...devices["Desktop Chrome"] } },
     ...browserProjects.map(({ name, device }) => ({
