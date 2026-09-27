@@ -1,12 +1,11 @@
+import { expectJson } from "@/api/assertions";
+import { healthResponse } from "@/api/schemas";
 import { expect, test } from "@/fixtures/test";
 
 test.describe("health", { tag: "@smoke" }, () => {
   test("service and database report ok", async ({ request }) => {
-    const response = await request.get("/api/v1/health");
+    const { data } = await expectJson(await request.get("/api/v1/health"), 200, healthResponse);
 
-    expect(response.status()).toBe(200);
-    expect(await response.json()).toMatchObject({
-      data: { status: "ok", database: "ok" },
-    });
+    expect(data).toMatchObject({ status: "ok", database: "ok" });
   });
 });

@@ -1,6 +1,7 @@
 import type { APIRequestContext } from "@playwright/test";
 import { ApplicationsEndpoint } from "@/api/endpoints/applications.endpoint";
-import type { Application, ApplicationInput, Envelope } from "@/api/types";
+import { applicationResponse } from "@/api/schemas";
+import type { Application, ApplicationInput } from "@/api/types";
 import type { NewApplication } from "@/data/application.factory";
 
 /**
@@ -21,7 +22,7 @@ export class ApplicationsApi {
     if (response.status() !== 201) {
       throw new Error(`Create failed: ${response.status()} ${await response.text()}`);
     }
-    const { data } = (await response.json()) as Envelope<Application>;
+    const { data } = applicationResponse.parse(await response.json());
     this.track(data.id);
     return data;
   }

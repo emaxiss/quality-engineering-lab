@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expectJson } from "@/api/assertions";
-import type { Application, ListEnvelope } from "@/api/types";
+import { applicationListResponse } from "@/api/schemas";
 import { buildApplication } from "@/data/application.factory";
 import { expect, test } from "@/fixtures/test";
 
@@ -14,16 +14,18 @@ test.describe("applications list api", () => {
       await applicationsApi.create(buildApplication({ company: `${marker} ${name}` }));
     }
 
-    const first = await expectJson<ListEnvelope<Application>>(
+    const first = await expectJson(
       await applicationsEndpoint.list({ q: marker, pageSize: 2, page: 1 }),
       200,
+      applicationListResponse,
     );
     expect(first.data).toHaveLength(2);
     expect(first.meta).toEqual({ page: 1, pageSize: 2, total: 3, totalPages: 2 });
 
-    const second = await expectJson<ListEnvelope<Application>>(
+    const second = await expectJson(
       await applicationsEndpoint.list({ q: marker, pageSize: 2, page: 2 }),
       200,
+      applicationListResponse,
     );
     expect(second.data).toHaveLength(1);
 
@@ -36,9 +38,10 @@ test.describe("applications list api", () => {
     await applicationsApi.create(buildApplication({ company: `${marker} Saved`, status: "SAVED" }));
     const applied = await applicationsApi.create(buildApplication({ company: `${marker} Applied`, status: "APPLIED" }));
 
-    const { data } = await expectJson<ListEnvelope<Application>>(
+    const { data } = await expectJson(
       await applicationsEndpoint.list({ q: marker, status: ["APPLIED"] }),
       200,
+      applicationListResponse,
     );
 
     expect(data.map((application) => application.id)).toEqual([applied.id]);
@@ -50,9 +53,10 @@ test.describe("applications list api", () => {
       await applicationsApi.create(buildApplication({ company: `${marker} ${name}` }));
     }
 
-    const { data } = await expectJson<ListEnvelope<Application>>(
+    const { data } = await expectJson(
       await applicationsEndpoint.list({ q: marker, sort: "company", order: "asc" }),
       200,
+      applicationListResponse,
     );
 
     expect(data.map((application) => application.company)).toEqual(
@@ -64,9 +68,10 @@ test.describe("applications list api", () => {
     const marker = newMarker();
     await applicationsApi.create(buildApplication({ company: `${marker} Only` }));
 
-    const { data, meta } = await expectJson<ListEnvelope<Application>>(
+    const { data, meta } = await expectJson(
       await applicationsEndpoint.list({ q: marker, page: 5, pageSize: 10 }),
       200,
+      applicationListResponse,
     );
 
     expect(data).toEqual([]);

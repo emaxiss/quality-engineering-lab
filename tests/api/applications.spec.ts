@@ -1,5 +1,5 @@
 import { expectApiError, expectJson } from "@/api/assertions";
-import type { Application, Envelope } from "@/api/types";
+import { applicationResponse } from "@/api/schemas";
 import { buildApplication } from "@/data/application.factory";
 import { expect, test } from "@/fixtures/test";
 
@@ -12,7 +12,7 @@ test.describe("applications api", () => {
   }) => {
     const input = buildApplication();
 
-    const { data } = await expectJson<Envelope<Application>>(await applicationsEndpoint.create(input), 201);
+    const { data } = await expectJson(await applicationsEndpoint.create(input), 201, applicationResponse);
     applicationsApi.track(data.id);
 
     expect(data).toMatchObject({
@@ -30,7 +30,7 @@ test.describe("applications api", () => {
   test("reads an application by id", async ({ applicationsEndpoint, applicationsApi }) => {
     const created = await applicationsApi.create(buildApplication({ priority: "P0", tags: ["api", "smoke"] }));
 
-    const { data } = await expectJson<Envelope<Application>>(await applicationsEndpoint.get(created.id), 200);
+    const { data } = await expectJson(await applicationsEndpoint.get(created.id), 200, applicationResponse);
 
     expect(data).toEqual(created);
   });
@@ -39,10 +39,7 @@ test.describe("applications api", () => {
     const created = await applicationsApi.create(buildApplication());
     const changes = { priority: "P0", description: "Updated through the API" } as const;
 
-    const { data } = await expectJson<Envelope<Application>>(
-      await applicationsEndpoint.update(created.id, changes),
-      200,
-    );
+    const { data } = await expectJson(await applicationsEndpoint.update(created.id, changes), 200, applicationResponse);
 
     expect(data).toEqual({ ...created, ...changes, updatedAt: expect.any(String) });
     expect(Date.parse(data.updatedAt)).toBeGreaterThan(Date.parse(created.updatedAt));
@@ -51,16 +48,18 @@ test.describe("applications api", () => {
   test("stamps applied and closed dates as the stage moves", async ({ applicationsEndpoint, applicationsApi }) => {
     const created = await applicationsApi.create(buildApplication());
 
-    const applied = await expectJson<Envelope<Application>>(
+    const applied = await expectJson(
       await applicationsEndpoint.update(created.id, { status: "APPLIED" }),
       200,
+      applicationResponse,
     );
     expect(applied.data.appliedAt).toEqual(expect.any(String));
     expect(applied.data.closedAt).toBeNull();
 
-    const rejected = await expectJson<Envelope<Application>>(
+    const rejected = await expectJson(
       await applicationsEndpoint.update(created.id, { status: "REJECTED" }),
       200,
+      applicationResponse,
     );
     expect(rejected.data.appliedAt).toBe(applied.data.appliedAt);
     expect(rejected.data.closedAt).toEqual(expect.any(String));
