@@ -47,6 +47,12 @@ export default defineConfig({
   projects: [
     { name: "setup", testMatch: /setup\/.*\.setup\.ts/ },
     { name: "api", testMatch: /api\/.*\.spec\.ts/, testIgnore: apiAuthSpec, dependencies: ["setup"] },
+    { name: "contract-consumer", testMatch: /contract\/consumer\/.*\.spec\.ts/ },
+    {
+      name: "contract-provider",
+      testMatch: /contract\/provider\/.*\.spec\.ts/,
+      dependencies: ["contract-consumer"],
+    },
     // Both auth projects sign in and out with their own account. Logging out ends every
     // session of that account, so they run one after the other, never in parallel.
     // Sign-in is rate limited per IP, so each runs once.
