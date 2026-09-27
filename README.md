@@ -33,7 +33,7 @@ Design decisions:
 | **Accessibility** | Automated WCAG checks with axe, plus keyboard and screen reader flows |
 | **Visual testing** | Screenshot comparison for key pages and states |
 | **CI/CD** | Pipelines that boot the app and its dependencies and run every suite on each change |
-| **Security-oriented testing** | Authorization and tenant isolation (cross-user access), auth edge cases, input handling |
+| **Security-oriented testing** | Authorization and tenant isolation (cross-user access, in place), auth edge cases, input handling |
 | **AI evaluations** | Evaluation harnesses for AI features, once the product has them |
 
 ## Approach
@@ -110,16 +110,17 @@ tests/
 | Project | Runs | Notes |
 | --- | --- | --- |
 | `setup` | `tests/setup/` | Signs in and saves the session |
-| `api` | `tests/api/` except `auth.spec.ts` | No browser. Depends on `setup` |
+| `api` | `tests/api/` except `auth.spec.ts` and `isolation.spec.ts` | No browser. Depends on `setup` |
 | `auth-api` | `tests/api/auth.spec.ts` | Login account, no browser |
 | `auth` | `tests/ui/auth.spec.ts` | Login account, desktop Chrome. Runs after `auth-api`: logging out ends every session of the account, so the two must not overlap |
+| `isolation-api` | `tests/api/isolation.spec.ts` | Main account plus the login account as a second user. Runs after `auth`, so no logout can end its session mid-test |
 | `chromium` | the rest of `tests/ui/` | Depends on `setup` |
 | `firefox`, `webkit`, `mobile-chrome` | the rest of `tests/ui/` | Only with `CROSS_BROWSER` set. Depend on `setup` |
 | `contract-consumer` | `tests/contract/consumer/` | No network. Writes `pacts/` (git-ignored) |
 | `contract-provider` | `tests/contract/provider/` | Depends on `contract-consumer`. Signs in once |
 | `migration-seed`, `migration-verify` | `tests/migration/` | Only with `MIGRATION` set, through the migration scripts. Depend on `setup` |
 
-Sign-in is rate limited per IP, so a full run signs in five times: `setup` once, `auth-api` twice, `auth` once, `contract-provider` once.
+Sign-in is rate limited per IP, so a full run signs in six times: `setup` once, `auth-api` twice, `auth` once, `isolation-api` once, `contract-provider` once.
 
 Traces are kept on first retry, and screenshots and videos only for failures. Locale is `en-US` and the time zone `UTC`. Setting `CI` turns on retries, `forbidOnly`, and the GitHub and JUnit reporters.
 
@@ -141,6 +142,7 @@ Happy paths only. Negative and edge cases come later.
 | --- | --- |
 | `api/auth.spec.ts` | Login returns a bearer token that authorizes requests; logout with that token ends the session |
 | `api/account.spec.ts` | Signed-in account, 401 without a session, JSON and CSV export |
+| `api/isolation.spec.ts` | A second account cannot read, search for, export, update or delete another account's application: every attempt answers 404, and the owner's copy stays unchanged |
 | `api/dashboard.spec.ts` | Summary counts an application in its stage, source and due follow-ups; 401 without a session |
 | `api/applications.spec.ts` | Create with defaults, read, partial update, applied and closed dates on stage changes, delete |
 | `api/applications-list.spec.ts` | Search with pagination meta, stage filter, sort, empty page past the end |

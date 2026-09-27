@@ -9,6 +9,7 @@ const isCI = !!process.env.CI;
 
 const authSpec = /ui\/auth\.spec\.ts/;
 const apiAuthSpec = /api\/auth\.spec\.ts/;
+const isolationSpec = /api\/isolation\.spec\.ts/;
 
 // Chromium runs by default. Set CROSS_BROWSER to add Firefox, WebKit and a mobile viewport.
 const browserProjects = [
@@ -46,7 +47,7 @@ export default defineConfig({
   },
   projects: [
     { name: "setup", testMatch: /setup\/.*\.setup\.ts/ },
-    { name: "api", testMatch: /api\/.*\.spec\.ts/, testIgnore: apiAuthSpec, dependencies: ["setup"] },
+    { name: "api", testMatch: /api\/.*\.spec\.ts/, testIgnore: [apiAuthSpec, isolationSpec], dependencies: ["setup"] },
     { name: "contract-consumer", testMatch: /contract\/consumer\/.*\.spec\.ts/ },
     {
       name: "contract-provider",
@@ -58,6 +59,8 @@ export default defineConfig({
     // Sign-in is rate limited per IP, so each runs once.
     { name: "auth-api", testMatch: apiAuthSpec },
     { name: "auth", testMatch: authSpec, dependencies: ["auth-api"], use: { ...devices["Desktop Chrome"] } },
+    // Uses the login account as the second user, so it waits until both auth projects are done.
+    { name: "isolation-api", testMatch: isolationSpec, dependencies: ["setup", "auth"] },
     // Upgrade tests: seed runs against the version before an upgrade, verify against the one after.
     // Only defined for the migration scripts, so they never join a normal run.
     ...(process.env.MIGRATION
