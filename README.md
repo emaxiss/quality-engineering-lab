@@ -2,6 +2,8 @@
 
 A hands-on Quality Engineering portfolio: test suites for a SaaS web application, covering its UI and its REST API (`/api/v1`).
 
+**Application under test:** https://rolequeue.vercel.app (open to anyone: sign up, or use "Try the demo" for a private account with sample data).
+
 > Status: Playwright page objects, fixtures and a first smoke suite (happy paths only) are in place. The other areas below are planned.
 
 ## Planned areas
@@ -25,17 +27,17 @@ A hands-on Quality Engineering portfolio: test suites for a SaaS web application
 
 ## Setup
 
-Requirements: Node.js 20.12+ (see `.nvmrc`), pnpm 10, the application under test running (by default `http://localhost:3000`), and two existing accounts in it.
+Requirements: Node.js 20.12+ (see `.nvmrc`), pnpm 10, and two accounts in the application under test (sign up at the live URL above).
 
 ```bash
 pnpm install
 pnpm browsers                # installs Chromium, Firefox and WebKit
-cp .env.example .env         # then fill in BASE_URL and both accounts
+cp .env.example .env         # then fill in both accounts
 ```
 
 | Variable | Used for |
 | --- | --- |
-| `BASE_URL` | Where the application runs. Point it at a production build: development servers can add overlays that cover page controls. |
+| `BASE_URL` | Where the application runs. Defaults to the live URL above. |
 | `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` | The account every signed-in test uses. The setup project signs in once and shares the session. |
 | `E2E_LOGIN_USER_EMAIL` / `E2E_LOGIN_USER_PASSWORD` | A second account for the log in / log out test. Logging out ends every session of an account, so it must differ from the one above. |
 

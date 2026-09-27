@@ -9,7 +9,7 @@ function required(name: string): string {
 // Getters, not constants: playwright.config.ts loads .env after this module is imported.
 export const env = {
   get baseURL(): string {
-    return process.env.BASE_URL ?? "http://localhost:3000";
+    return process.env.BASE_URL ?? "https://rolequeue.vercel.app";
   },
   get userEmail(): string {
     return required("E2E_USER_EMAIL");
