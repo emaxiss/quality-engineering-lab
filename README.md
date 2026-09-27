@@ -91,5 +91,5 @@ Happy paths only. Negative and edge cases come later.
 | `api/health.spec.ts` | Health endpoint reports the service and database as ok |
 | `ui/public.spec.ts` | Landing page, link to the login form |
 | `ui/auth.spec.ts` | Log in, log out |
-| `ui/navigation.spec.ts` | Dashboard loads, primary navigation reaches every section |
+| `ui/navigation.spec.ts` | Home loads, primary navigation reaches every section |
 | `ui/applications.spec.ts` | Board and list views, add an application, open its details |

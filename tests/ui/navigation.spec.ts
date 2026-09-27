@@ -1,20 +1,20 @@
 import { expect, test } from "@/fixtures/test";
 
 test.describe("navigation", { tag: "@smoke" }, () => {
-  test("signed-in user lands on the dashboard", async ({ dashboardPage }) => {
-    await dashboardPage.goto();
+  test("signed-in user lands on Home", async ({ homePage }) => {
+    await homePage.goto();
 
-    await expect(dashboardPage.heading).toBeVisible();
-    await expect(dashboardPage.focusSection).toBeVisible();
+    await expect(homePage.heading).toBeVisible();
+    await expect(homePage.focusSection).toBeVisible();
   });
 
   test("primary navigation reaches every section", async ({
-    dashboardPage,
+    homePage,
     applicationsPage,
     settingsPage,
     appShell,
   }) => {
-    await dashboardPage.goto();
+    await homePage.goto();
 
     await appShell.goTo("Applications");
     await applicationsPage.expectLoaded();
@@ -23,6 +23,6 @@ test.describe("navigation", { tag: "@smoke" }, () => {
     await settingsPage.expectLoaded();
 
     await appShell.goTo("Home");
-    await dashboardPage.expectLoaded();
+    await homePage.expectLoaded();
   });
 });

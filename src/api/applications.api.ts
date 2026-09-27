@@ -1,7 +1,7 @@
 import type { APIRequestContext } from "@playwright/test";
 import type { NewApplication } from "@/data/application.factory";
 
-const BASE_PATH = "/api/v1/opportunities";
+const BASE_PATH = "/api/v1/applications";
 
 /**
  * Arranges and cleans up test data through the REST API, so UI specs do not
