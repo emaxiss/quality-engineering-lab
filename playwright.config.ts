@@ -7,6 +7,8 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 
 const isCI = !!process.env.CI;
 
+const authSpec = /ui\/auth\.spec\.ts/;
+
 const browserProjects = [
   { name: "chromium", device: "Desktop Chrome" },
   { name: "firefox", device: "Desktop Firefox" },
@@ -39,9 +41,12 @@ export default defineConfig({
   projects: [
     { name: "setup", testMatch: /setup\/.*\.setup\.ts/ },
     { name: "api", testMatch: /api\/.*\.spec\.ts/ },
+    // Signs in and out with its own account, once: sign-in is rate limited per IP.
+    { name: "auth", testMatch: authSpec, use: { ...devices["Desktop Chrome"] } },
     ...browserProjects.map(({ name, device }) => ({
       name,
       testMatch: /ui\/.*\.spec\.ts/,
+      testIgnore: authSpec,
       dependencies: ["setup"],
       use: { ...devices[device], storageState: AUTH_STATE_PATH },
     })),

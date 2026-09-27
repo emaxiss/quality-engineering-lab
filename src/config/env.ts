@@ -17,6 +17,12 @@ export const env = {
   get userPassword(): string {
     return required("E2E_USER_PASSWORD");
   },
+  get loginUserEmail(): string {
+    return required("E2E_LOGIN_USER_EMAIL");
+  },
+  get loginUserPassword(): string {
+    return required("E2E_LOGIN_USER_PASSWORD");
+  },
 };
 
 export const AUTH_STATE_PATH = "playwright/.auth/user.json";
