@@ -4,7 +4,7 @@ A hands-on Quality Engineering portfolio: test suites for a SaaS web application
 
 **Application under test:** https://rolequeue.vercel.app (open to anyone: sign up, or use "Try the demo" for a private account with sample data).
 
-> Status: Playwright page objects, fixtures and a first smoke suite (happy paths only) are in place. The other areas below are planned.
+> Status: Playwright page objects, fixtures, a UI smoke suite and an API suite are in place. The other areas below are planned.
 
 ## Findings and decisions
 
@@ -12,7 +12,7 @@ What testing this application surfaced, and how it shaped the suites.
 
 | Finding | How the suites handle it |
 | --- | --- |
-| **Logging out with a bearer token does not end the session.** `POST /api/v1/auth/logout` answers 204, but the token keeps authorizing requests until it expires, about an hour later. Logging out with the session cookie does end the session. | Covered by the API suite ([#1](https://github.com/emaxiss/quality-engineering-lab/pull/1)). The test asserts the correct behavior and is marked `test.fail()`, so the suite stays green while the defect exists and turns red once it is fixed, as a reminder to remove the marker. |
+| **Logging out with a bearer token does not end the session.** `POST /api/v1/auth/logout` answers 204, but the token keeps authorizing requests until it expires, about an hour later. Logging out with the session cookie does end the session. | Covered by `tests/api/auth.spec.ts`. The test asserts the correct behavior and is marked `test.fail()`, so the suite stays green while the defect exists and turns red once it is fixed, as a reminder to remove the marker. |
 | **Logging out ends every session of the account**, not just the current one. | The log in and log out tests use a dedicated account, so they can never sign out the session the rest of the suite shares. |
 | **Sign-in is rate limited per IP.** | The suite signs in once and reuses the session. Only the log in and log out tests sign in on their own, so a full run stays well inside the limit. |
 
@@ -55,7 +55,7 @@ cp .env.example .env         # then fill in both accounts
 | --- | --- |
 | `BASE_URL` | Where the application runs. Defaults to the live URL above. |
 | `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` | The account every signed-in test uses. The setup project signs in once and shares the session. |
-| `E2E_LOGIN_USER_EMAIL` / `E2E_LOGIN_USER_PASSWORD` | A second account for the log in / log out test. Logging out ends every session of an account, so it must differ from the one above. |
+| `E2E_LOGIN_USER_EMAIL` / `E2E_LOGIN_USER_PASSWORD` | A second account for the log in / log out tests (UI and API). Logging out ends every session of an account, so it must differ from the one above. |
 
 | Script | What it does |
 | --- | --- |
@@ -73,7 +73,11 @@ src/
   config/env.ts         typed access to environment variables
   pages/                page objects, one per screen, all extending BasePage
   components/           parts shared across pages: app shell, dialogs
-  api/                  REST clients that arrange and clean up test data
+  api/
+    endpoints/          one client per resource, returning raw responses
+    applications.api.ts arranges and cleans up test data
+    assertions.ts       status, JSON and error-envelope checks
+    types.ts            response and request types
   data/                 factories for unique test data
   fixtures/test.ts      test.extend: page objects and API clients as fixtures
 tests/
@@ -85,6 +89,7 @@ tests/
 - **Page objects** expose locators and user actions. Each defines `expectLoaded()`, the one assertion it owns; every other assertion lives in the spec.
 - **Locators** use roles and accessible names only, never CSS or test IDs.
 - **Fixtures** hand specs ready page objects, so specs never construct them.
+- **API specs** call endpoint clients and assert on the raw response, so status codes and error envelopes are part of every check. The `userRequest` fixture is an API context signed in with the saved session; the built-in `request` fixture stays anonymous.
 - **Test data** is unique per test and created through the API when a spec only needs it to exist. `applicationsApi` deletes everything a test created or tracked when the test ends, pass or fail.
 - **Sessions**: the `setup` project signs in through the UI and saves the session to `playwright/.auth/` (git-ignored). Browser projects reuse it. Signed-out specs opt out with an empty `storageState`.
 
@@ -93,10 +98,13 @@ tests/
 | Project | Runs | Notes |
 | --- | --- | --- |
 | `setup` | `tests/setup/` | Signs in and saves the session |
-| `api` | `tests/api/` | No browser |
-| `auth` | `tests/ui/auth.spec.ts` | Desktop Chrome, own account. Sign-in is rate limited per IP, so a full run signs in only twice. |
+| `api` | `tests/api/` except `auth.spec.ts` | No browser. Depends on `setup` |
+| `auth-api` | `tests/api/auth.spec.ts` | Login account, no browser |
+| `auth` | `tests/ui/auth.spec.ts` | Login account, desktop Chrome. Runs after `auth-api`: logging out ends every session of the account, so the two must not overlap |
 | `chromium` | the rest of `tests/ui/` | Depends on `setup` |
 | `firefox`, `webkit`, `mobile-chrome` | the rest of `tests/ui/` | Only with `CROSS_BROWSER` set. Depend on `setup` |
+
+Sign-in is rate limited per IP, so a full run signs in four times: `setup` once, `auth-api` twice, `auth` once.
 
 Traces are kept on first retry, and screenshots and videos only for failures. Locale is `en-US` and the time zone `UTC`. Setting `CI` turns on retries, `forbidOnly`, and the GitHub and JUnit reporters.
 
@@ -111,3 +119,21 @@ Happy paths only. Negative and edge cases come later.
 | `ui/auth.spec.ts` | Log in, log out |
 | `ui/navigation.spec.ts` | Dashboard loads, primary navigation reaches every section |
 | `ui/applications.spec.ts` | Board and list views, add an application, open its details |
+
+## API suite
+
+| Spec | Covers |
+| --- | --- |
+| `api/auth.spec.ts` | Login returns a bearer token that authorizes requests; logout with that token ends the session |
+| `api/account.spec.ts` | Signed-in account, 401 without a session, JSON and CSV export |
+| `api/applications.spec.ts` | Create with defaults, read, partial update, applied and closed dates on stage changes, delete |
+| `api/applications-list.spec.ts` | Search with pagination meta, stage filter, sort, empty page past the end |
+| `api/applications-errors.spec.ts` | Validation errors with field paths, malformed and unknown ids, 401 on every call without a session |
+
+### Known issues
+
+Tests for known defects assert the correct behavior and are marked `test.fail()`, so the suite stays green while the defect exists and turns red once it is fixed, as a reminder to remove the marker.
+
+| Test | Defect |
+| --- | --- |
+| `auth api › logout with a bearer token ends the session` | Logout answers 204 for a bearer token, but the token keeps working until it expires. Logging out with the session cookie does end every session. |

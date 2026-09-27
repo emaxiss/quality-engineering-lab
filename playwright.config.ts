@@ -8,6 +8,7 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 const isCI = !!process.env.CI;
 
 const authSpec = /ui\/auth\.spec\.ts/;
+const apiAuthSpec = /api\/auth\.spec\.ts/;
 
 // Chromium runs by default. Set CROSS_BROWSER to add Firefox, WebKit and a mobile viewport.
 const browserProjects = [
@@ -45,9 +46,12 @@ export default defineConfig({
   },
   projects: [
     { name: "setup", testMatch: /setup\/.*\.setup\.ts/ },
-    { name: "api", testMatch: /api\/.*\.spec\.ts/ },
-    // Signs in and out with its own account, once: sign-in is rate limited per IP.
-    { name: "auth", testMatch: authSpec, use: { ...devices["Desktop Chrome"] } },
+    { name: "api", testMatch: /api\/.*\.spec\.ts/, testIgnore: apiAuthSpec, dependencies: ["setup"] },
+    // Both auth projects sign in and out with their own account. Logging out ends every
+    // session of that account, so they run one after the other, never in parallel.
+    // Sign-in is rate limited per IP, so each runs once.
+    { name: "auth-api", testMatch: apiAuthSpec },
+    { name: "auth", testMatch: authSpec, dependencies: ["auth-api"], use: { ...devices["Desktop Chrome"] } },
     ...browserProjects.map(({ name, device }) => ({
       name,
       testMatch: /ui\/.*\.spec\.ts/,
