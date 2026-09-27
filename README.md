@@ -81,8 +81,9 @@ src/
   api/
     endpoints/          one client per resource, returning raw responses
     applications.api.ts arranges and cleans up test data
-    assertions.ts       status, JSON and error-envelope checks
-    types.ts            response and request types
+    schemas.ts          Zod schemas for every response body
+    assertions.ts       status, JSON and error-envelope checks, validated against the schemas
+    types.ts            types inferred from the schemas, plus request types
   data/                 factories for unique test data
   contracts/            Pact consumer client, pact settings, provider states
   migration/            upgrade-test dataset and account snapshots
@@ -100,7 +101,7 @@ tests/
 - **Page objects** expose locators and user actions. Each defines `expectLoaded()`, the one assertion it owns; every other assertion lives in the spec.
 - **Locators** use roles and accessible names only, never CSS or test IDs.
 - **Fixtures** hand specs ready page objects, so specs never construct them.
-- **API specs** call endpoint clients and assert on the raw response, so status codes and error envelopes are part of every check. The `userRequest` fixture is an API context signed in with the saved session; the built-in `request` fixture stays anonymous.
+- **API specs** call endpoint clients and assert on the raw response, so status codes and error envelopes are part of every check. Every JSON body is also parsed with its Zod schema: objects are strict, so a field that appears, disappears or changes type fails the test that received it, with a message naming the field. The TypeScript types come from the same schemas, so they cannot drift from what the tests check. The `userRequest` fixture is an API context signed in with the saved session; the built-in `request` fixture stays anonymous.
 - **Test data** is unique per test and created through the API when a spec only needs it to exist. `applicationsApi` deletes everything a test created or tracked when the test ends, pass or fail.
 - **Sessions**: the `setup` project signs in through the UI and saves the session to `playwright/.auth/` (git-ignored). Browser projects reuse it. Signed-out specs opt out with an empty `storageState`.
 
@@ -140,6 +141,7 @@ Happy paths only. Negative and edge cases come later.
 | --- | --- |
 | `api/auth.spec.ts` | Login returns a bearer token that authorizes requests; logout with that token ends the session |
 | `api/account.spec.ts` | Signed-in account, 401 without a session, JSON and CSV export |
+| `api/dashboard.spec.ts` | Summary counts an application in its stage, source and due follow-ups; 401 without a session |
 | `api/applications.spec.ts` | Create with defaults, read, partial update, applied and closed dates on stage changes, delete |
 | `api/applications-list.spec.ts` | Search with pagination meta, stage filter, sort, empty page past the end |
 | `api/applications-errors.spec.ts` | Validation errors with field paths, malformed and unknown ids, 401 on every call without a session |
