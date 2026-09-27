@@ -1,10 +1,11 @@
 import type { APIRequestContext, APIResponse } from "@playwright/test";
 import type { ApplicationInput, ListQuery } from "@/api/types";
-
-const BASE_PATH = "/api/v1/opportunities";
+import { env } from "@/config/env";
 
 /** One method per HTTP call. Returns the raw response so specs can assert status codes. */
 export class ApplicationsEndpoint {
+  private readonly basePath = env.applicationsApiPath;
+
   constructor(private readonly request: APIRequestContext) {}
 
   list(query: ListQuery = {}): Promise<APIResponse> {
@@ -12,22 +13,22 @@ export class ApplicationsEndpoint {
     for (const [key, value] of Object.entries(query)) {
       if (value !== undefined) params[key] = Array.isArray(value) ? value.join(",") : value;
     }
-    return this.request.get(BASE_PATH, { params });
+    return this.request.get(this.basePath, { params });
   }
 
   get(id: string): Promise<APIResponse> {
-    return this.request.get(`${BASE_PATH}/${id}`);
+    return this.request.get(`${this.basePath}/${id}`);
   }
 
   create(input: ApplicationInput): Promise<APIResponse> {
-    return this.request.post(BASE_PATH, { data: input });
+    return this.request.post(this.basePath, { data: input });
   }
 
   update(id: string, changes: ApplicationInput): Promise<APIResponse> {
-    return this.request.patch(`${BASE_PATH}/${id}`, { data: changes });
+    return this.request.patch(`${this.basePath}/${id}`, { data: changes });
   }
 
   delete(id: string): Promise<APIResponse> {
-    return this.request.delete(`${BASE_PATH}/${id}`);
+    return this.request.delete(`${this.basePath}/${id}`);
   }
 }

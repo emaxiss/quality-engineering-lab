@@ -23,6 +23,10 @@ export const env = {
   get loginUserPassword(): string {
     return required("E2E_LOGIN_USER_PASSWORD");
   },
+  /** Base path of the applications API. Override to test a build that serves it elsewhere. */
+  get applicationsApiPath(): string {
+    return process.env.APPLICATIONS_API_PATH ?? "/api/v1/opportunities";
+  },
 };
 
 export const AUTH_STATE_PATH = "playwright/.auth/user.json";
