@@ -18,11 +18,12 @@ export interface ScanOptions {
   known?: KnownIssue[];
 }
 
-const visibleText = (html: string) =>
-  html
-    .replace(/<!--.*?-->/g, "")
-    .replace(/<[^>]+>/g, "")
-    .trim();
+/** Text of a failing element, read from the page through the selector axe reports for it. */
+async function elementText(page: Page, target: unknown[]): Promise<string> {
+  const [selector] = target;
+  if (typeof selector !== "string" || target.length !== 1) return ""; // inside a frame or shadow root
+  return ((await page.locator(selector).first().textContent()) ?? "").trim();
+}
 
 // Content that fades or slides in is measured mid-animation otherwise, which reports
 // contrast failures for colors the user never sees once the page settles.
@@ -55,15 +56,15 @@ export async function expectAccessible(page: Page, testInfo: TestInfo, options: 
   const seen = new Set<KnownIssue>();
   const unexpected: string[] = [];
   for (const violation of violations) {
-    const nodes = violation.nodes.filter((node) => {
-      const issue = known.find(
-        (candidate) => candidate.rule === violation.id && candidate.text.test(visibleText(node.html)),
-      );
+    let unmatched = 0;
+    for (const node of violation.nodes) {
+      const text = await elementText(page, node.target);
+      const issue = known.find((candidate) => candidate.rule === violation.id && candidate.text.test(text));
       if (issue) seen.add(issue);
-      return !issue;
-    });
-    if (nodes.length > 0) {
-      unexpected.push(`${violation.id} (${violation.impact}): ${violation.help}, ${nodes.length} element(s)`);
+      else unmatched++;
+    }
+    if (unmatched > 0) {
+      unexpected.push(`${violation.id} (${violation.impact}): ${violation.help}, ${unmatched} element(s)`);
     }
   }
 
