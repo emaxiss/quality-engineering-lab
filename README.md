@@ -2,6 +2,8 @@
 
 A hands-on Quality Engineering portfolio: test suites for a SaaS web application, covering its UI and its REST API (`/api/v1`).
 
+**Application under test:** https://rolequeue.vercel.app (open to anyone: sign up, or use "Try the demo" for a private account with sample data).
+
 > Status: Playwright page objects, fixtures and a first smoke suite (happy paths only) are in place. The other areas below are planned.
 
 ## Planned areas
@@ -25,7 +27,7 @@ A hands-on Quality Engineering portfolio: test suites for a SaaS web application
 
 ## Setup
 
-Requirements: Node.js 20.12+ (see `.nvmrc`), pnpm 10, the application under test running (by default `http://localhost:3000`), and two existing accounts in it.
+Requirements: Node.js 20.12+ (see `.nvmrc`), pnpm 10, the application under test (the live URL above, or a local build at `http://localhost:3000`), and two existing accounts in it.
 
 ```bash
 pnpm install
