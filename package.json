@@ -18,6 +18,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@pact-foundation/pact": "17.1.4",
     "@playwright/test": "1.63.0",
     "@types/node": "^24.19.0",
     "typescript": "~5.9.3"
