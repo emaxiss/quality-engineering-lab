@@ -10,11 +10,16 @@ const isCI = !!process.env.CI;
 const authSpec = /ui\/auth\.spec\.ts/;
 const apiAuthSpec = /api\/auth\.spec\.ts/;
 
+// Chromium runs by default. Set CROSS_BROWSER to add Firefox, WebKit and a mobile viewport.
 const browserProjects = [
   { name: "chromium", device: "Desktop Chrome" },
-  { name: "firefox", device: "Desktop Firefox" },
-  { name: "webkit", device: "Desktop Safari" },
-  { name: "mobile-chrome", device: "Pixel 7" },
+  ...(process.env.CROSS_BROWSER
+    ? [
+        { name: "firefox", device: "Desktop Firefox" },
+        { name: "webkit", device: "Desktop Safari" },
+        { name: "mobile-chrome", device: "Pixel 7" },
+      ]
+    : []),
 ];
 
 export default defineConfig({

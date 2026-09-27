@@ -6,6 +6,22 @@ A hands-on Quality Engineering portfolio: test suites for a SaaS web application
 
 > Status: Playwright page objects, fixtures, a UI smoke suite and an API suite are in place. The other areas below are planned.
 
+## Findings and decisions
+
+What testing this application surfaced, and how it shaped the suites.
+
+| Finding | How the suites handle it |
+| --- | --- |
+| **Logging out with a bearer token does not end the session.** `POST /api/v1/auth/logout` answers 204, but the token keeps authorizing requests until it expires, about an hour later. Logging out with the session cookie does end the session. | Covered by `tests/api/auth.spec.ts`. The test asserts the correct behavior and is marked `test.fail()`, so the suite stays green while the defect exists and turns red once it is fixed, as a reminder to remove the marker. |
+| **Logging out ends every session of the account**, not just the current one. | The log in and log out tests use a dedicated account, so they can never sign out the session the rest of the suite shares. |
+| **Sign-in is rate limited per IP.** | The suite signs in once and reuses the session. Only the log in and log out tests sign in on their own, so a full run stays well inside the limit. |
+
+Design decisions:
+
+- **Tests run against the live application**, so every test creates uniquely named data and deletes it when it ends, pass or fail. The test account holds no records after a run.
+- **Locators use roles and accessible names only.** A locator that stops matching often points at an accessibility regression, not just a markup change.
+- **Chromium by default, other browsers on demand.** Firefox, WebKit and a mobile viewport run with `pnpm test:cross-browser`, which keeps the everyday run fast and inside the sign-in limit.
+
 ## Planned areas
 
 | Area | Focus |
@@ -43,8 +59,9 @@ cp .env.example .env         # then fill in both accounts
 
 | Script | What it does |
 | --- | --- |
-| `pnpm test` | Runs every Playwright project |
+| `pnpm test` | Runs every project, with Chromium as the only browser |
 | `pnpm test:smoke` | Runs only tests tagged `@smoke` |
+| `pnpm test:cross-browser` | Runs everything in Chromium, Firefox, WebKit and a Pixel 7 viewport |
 | `pnpm test:headed` / `pnpm test:ui` | Headed run / Playwright UI mode |
 | `pnpm report` | Opens the last HTML report |
 | `pnpm typecheck` | TypeScript check |
@@ -84,7 +101,8 @@ tests/
 | `api` | `tests/api/` except `auth.spec.ts` | No browser. Depends on `setup` |
 | `auth-api` | `tests/api/auth.spec.ts` | Login account, no browser |
 | `auth` | `tests/ui/auth.spec.ts` | Login account, desktop Chrome. Runs after `auth-api`: logging out ends every session of the account, so the two must not overlap |
-| `chromium`, `firefox`, `webkit`, `mobile-chrome` | the rest of `tests/ui/` | Depend on `setup` |
+| `chromium` | the rest of `tests/ui/` | Depends on `setup` |
+| `firefox`, `webkit`, `mobile-chrome` | the rest of `tests/ui/` | Only with `CROSS_BROWSER` set. Depend on `setup` |
 
 Sign-in is rate limited per IP, so a full run signs in four times: `setup` once, `auth-api` twice, `auth` once.
 
