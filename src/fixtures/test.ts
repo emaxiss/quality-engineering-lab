@@ -2,6 +2,7 @@ import { test as base, type APIRequestContext } from "@playwright/test";
 import { ApplicationsApi } from "@/api/applications.api";
 import { AccountEndpoint } from "@/api/endpoints/account.endpoint";
 import { ApplicationsEndpoint } from "@/api/endpoints/applications.endpoint";
+import { DashboardEndpoint } from "@/api/endpoints/dashboard.endpoint";
 import { AUTH_STATE_PATH } from "@/config/env";
 import { AppShell } from "@/components/app-shell.component";
 import { ApplicationsPage } from "@/pages/applications.page";
@@ -20,6 +21,7 @@ interface Fixtures {
   userRequest: APIRequestContext;
   applicationsEndpoint: ApplicationsEndpoint;
   accountEndpoint: AccountEndpoint;
+  dashboardEndpoint: DashboardEndpoint;
   applicationsApi: ApplicationsApi;
 }
 
@@ -39,6 +41,7 @@ export const test = base.extend<Fixtures>({
   },
   applicationsEndpoint: async ({ userRequest }, use) => use(new ApplicationsEndpoint(userRequest)),
   accountEndpoint: async ({ userRequest }, use) => use(new AccountEndpoint(userRequest)),
+  dashboardEndpoint: async ({ userRequest }, use) => use(new DashboardEndpoint(userRequest)),
 
   applicationsApi: async ({ userRequest }, use) => {
     const api = new ApplicationsApi(userRequest);
