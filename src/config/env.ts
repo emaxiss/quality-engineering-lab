@@ -25,7 +25,7 @@ export const env = {
   },
   /** Base path of the applications API. Override to test a build that serves it elsewhere. */
   get applicationsApiPath(): string {
-    return process.env.APPLICATIONS_API_PATH ?? "/api/v1/opportunities";
+    return process.env.APPLICATIONS_API_PATH ?? "/api/v1/applications";
   },
   /** Where the migration seed phase writes its snapshot and the verify phase reads it. */
   get migrationSnapshotDir(): string {
