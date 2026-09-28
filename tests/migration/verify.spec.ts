@@ -7,6 +7,7 @@ import { signedInContext } from "@/api/sessions";
 import type { Application } from "@/api/types";
 import { AUTH_STATE_PATH, env } from "@/config/env";
 import { expect, test } from "@/fixtures/test";
+import { expectedAccountState, parseExpectedChanges } from "@/migration/expected-changes";
 import { type AccountState, loadSnapshot, readAccountState, type Role, type Snapshot } from "@/migration/snapshot";
 
 // Read-only comparisons run first, the checks that change data run last.
@@ -16,12 +17,20 @@ test.describe("migration verify", () => {
   let snapshot: Snapshot;
   const contexts = {} as Partial<Record<Role, APIRequestContext>>;
   const after = {} as Record<Role, AccountState>;
+  // The snapshot with the value changes the upgrade is supposed to make applied.
+  const expected = {} as Record<Role, AccountState>;
   // Set once both accounts are read. If setup fails (for example on a sign-in rate limit),
   // the seeded data is kept, so the verify phase can simply be run again.
   let verifying = false;
 
   test.beforeAll(async ({ playwright }) => {
     snapshot = loadSnapshot();
+    const changes = parseExpectedChanges(env.migrationExpectedChanges);
+    for (const role of ["main", "second"] as const)
+      expected[role] = expectedAccountState(snapshot.accounts[role], changes);
+    if (Object.keys(changes).length > 0) {
+      test.info().annotations.push({ type: "expected changes", description: JSON.stringify(changes) });
+    }
     contexts.main = await playwright.request.newContext({ baseURL: env.baseURL, storageState: AUTH_STATE_PATH });
     contexts.second = await signedInContext(playwright, env.baseURL, env.loginUserEmail, env.loginUserPassword);
     after.main = await readAccountState(contexts.main);
@@ -56,23 +65,23 @@ test.describe("migration verify", () => {
 
   test("keeps every record, and adds none", () => {
     for (const role of ["main", "second"] as const) {
-      expect(after[role].total, role).toBe(snapshot.accounts[role].total);
+      expect(after[role].total, role).toBe(expected[role].total);
       expect(
         after[role].records.map((record) => record.id),
         role,
-      ).toEqual(snapshot.accounts[role].records.map((record) => record.id));
+      ).toEqual(expected[role].records.map((record) => record.id));
     }
   });
 
-  test("leaves every record unchanged, timestamps included", () => {
+  test("leaves every record as it was, apart from the expected changes, timestamps included", () => {
     for (const role of ["main", "second"] as const) {
-      expect(after[role].records, role).toEqual(snapshot.accounts[role].records);
+      expect(after[role].records, role).toEqual(expected[role].records);
     }
   });
 
   test("keeps the dashboard figures", () => {
     for (const role of ["main", "second"] as const) {
-      expect(after[role].summary, role).toEqual(snapshot.accounts[role].summary);
+      expect(after[role].summary, role).toEqual(expected[role].summary);
     }
   });
 

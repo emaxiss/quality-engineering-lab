@@ -47,6 +47,8 @@ export default defineConfig({
   },
   projects: [
     { name: "setup", testMatch: /setup\/.*\.setup\.ts/ },
+    // Plain functions, no browser and no network.
+    { name: "unit", testMatch: /unit\/.*\.spec\.ts/ },
     { name: "api", testMatch: /api\/.*\.spec\.ts/, testIgnore: [apiAuthSpec, isolationSpec], dependencies: ["setup"] },
     { name: "contract-consumer", testMatch: /contract\/consumer\/.*\.spec\.ts/ },
     {
