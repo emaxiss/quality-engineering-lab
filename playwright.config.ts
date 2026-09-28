@@ -8,12 +8,19 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 const isCI = !!process.env.CI;
 
 const authSpec = /ui\/auth\.spec\.ts/;
+const apiAuthSpec = /api\/auth\.spec\.ts/;
+const isolationSpec = /api\/isolation\.spec\.ts/;
 
+// Chromium runs by default. Set CROSS_BROWSER to add Firefox, WebKit and a mobile viewport.
 const browserProjects = [
   { name: "chromium", device: "Desktop Chrome" },
-  { name: "firefox", device: "Desktop Firefox" },
-  { name: "webkit", device: "Desktop Safari" },
-  { name: "mobile-chrome", device: "Pixel 7" },
+  ...(process.env.CROSS_BROWSER
+    ? [
+        { name: "firefox", device: "Desktop Firefox" },
+        { name: "webkit", device: "Desktop Safari" },
+        { name: "mobile-chrome", device: "Pixel 7" },
+      ]
+    : []),
 ];
 
 export default defineConfig({
@@ -40,9 +47,35 @@ export default defineConfig({
   },
   projects: [
     { name: "setup", testMatch: /setup\/.*\.setup\.ts/ },
-    { name: "api", testMatch: /api\/.*\.spec\.ts/ },
-    // Signs in and out with its own account, once: sign-in is rate limited per IP.
-    { name: "auth", testMatch: authSpec, use: { ...devices["Desktop Chrome"] } },
+    { name: "api", testMatch: /api\/.*\.spec\.ts/, testIgnore: [apiAuthSpec, isolationSpec], dependencies: ["setup"] },
+    { name: "contract-consumer", testMatch: /contract\/consumer\/.*\.spec\.ts/ },
+    {
+      name: "contract-provider",
+      testMatch: /contract\/provider\/.*\.spec\.ts/,
+      dependencies: ["contract-consumer"],
+    },
+    // Both auth projects sign in and out with their own account. Logging out ends every
+    // session of that account, so they run one after the other, never in parallel.
+    // Sign-in is rate limited per IP, so each runs once.
+    { name: "auth-api", testMatch: apiAuthSpec },
+    { name: "auth", testMatch: authSpec, dependencies: ["auth-api"], use: { ...devices["Desktop Chrome"] } },
+    // Uses the login account as the second user, so it waits until both auth projects are done.
+    { name: "isolation-api", testMatch: isolationSpec, dependencies: ["setup", "auth"] },
+    // WCAG 2.2 AA scans with axe. Desktop Chrome only: the rules check markup, not the engine.
+    {
+      name: "a11y",
+      testMatch: /a11y\/.*\.spec\.ts/,
+      dependencies: ["setup"],
+      use: { ...devices["Desktop Chrome"], storageState: AUTH_STATE_PATH },
+    },
+    // Upgrade tests: seed runs against the version before an upgrade, verify against the one after.
+    // Only defined for the migration scripts, so they never join a normal run.
+    ...(process.env.MIGRATION
+      ? [
+          { name: "migration-seed", testMatch: /migration\/seed\.spec\.ts/, dependencies: ["setup"] },
+          { name: "migration-verify", testMatch: /migration\/verify\.spec\.ts/, dependencies: ["setup"] },
+        ]
+      : []),
     ...browserProjects.map(({ name, device }) => ({
       name,
       testMatch: /ui\/.*\.spec\.ts/,

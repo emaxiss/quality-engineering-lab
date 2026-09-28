@@ -1,26 +1,30 @@
 import type { APIRequestContext } from "@playwright/test";
+import { ApplicationsEndpoint } from "@/api/endpoints/applications.endpoint";
+import { applicationResponse } from "@/api/schemas";
+import type { Application, ApplicationInput } from "@/api/types";
 import type { NewApplication } from "@/data/application.factory";
 
-const BASE_PATH = "/api/v1/applications";
-
 /**
- * Arranges and cleans up test data through the REST API, so UI specs do not
+ * Arranges and cleans up test data through the REST API, so specs do not
  * depend on seed data and leave nothing behind. Every id it creates or is
  * told about is deleted by deleteTracked().
  */
 export class ApplicationsApi {
   private readonly tracked = new Set<string>();
+  private readonly endpoint: ApplicationsEndpoint;
 
-  constructor(private readonly request: APIRequestContext) {}
+  constructor(request: APIRequestContext) {
+    this.endpoint = new ApplicationsEndpoint(request);
+  }
 
-  async create(application: NewApplication): Promise<string> {
-    const response = await this.request.post(BASE_PATH, { data: application });
+  async create(application: NewApplication & ApplicationInput): Promise<Application> {
+    const response = await this.endpoint.create(application);
     if (response.status() !== 201) {
       throw new Error(`Create failed: ${response.status()} ${await response.text()}`);
     }
-    const { data } = (await response.json()) as { data: { id: string } };
+    const { data } = applicationResponse.parse(await response.json());
     this.track(data.id);
-    return data.id;
+    return data;
   }
 
   track(id: string): void {
@@ -28,7 +32,7 @@ export class ApplicationsApi {
   }
 
   async delete(id: string): Promise<void> {
-    const response = await this.request.delete(`${BASE_PATH}/${id}`);
+    const response = await this.endpoint.delete(id);
     // 404 means it is already gone, which is the outcome cleanup wants.
     if (response.status() !== 204 && response.status() !== 404) {
       throw new Error(`Delete ${id} failed: ${response.status()} ${await response.text()}`);

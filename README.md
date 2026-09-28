@@ -1,23 +1,42 @@
 # Quality Engineering Lab
 
+[![Nightly](https://github.com/emaxiss/quality-engineering-lab/actions/workflows/nightly.yml/badge.svg)](https://github.com/emaxiss/quality-engineering-lab/actions/workflows/nightly.yml) [![Checks](https://github.com/emaxiss/quality-engineering-lab/actions/workflows/checks.yml/badge.svg)](https://github.com/emaxiss/quality-engineering-lab/actions/workflows/checks.yml)
+
 A hands-on Quality Engineering portfolio: test suites for a SaaS web application, covering its UI and its REST API (`/api/v1`).
 
 **Application under test:** https://rolequeue.vercel.app (open to anyone: sign up, or use "Try the demo" for a private account with sample data).
 
-> Status: Playwright page objects, fixtures and a first smoke suite (happy paths only) are in place. The other areas below are planned.
+> Status: Playwright page objects, fixtures, a UI smoke suite, an API suite with response schemas, cross-user isolation tests, Pact contract tests, database migration tests and WCAG accessibility scans are in place. The other areas below are planned.
+
+## Findings and decisions
+
+What testing this application surfaced, and how it shaped the suites.
+
+| Finding | How the suites handle it |
+| --- | --- |
+| **Logging out with a bearer token did not end the session (fixed).** `POST /api/v1/auth/logout` answered 204, but the token kept authorizing requests until it expired, about an hour later. Logging out with the session cookie did end the session. | Found by `tests/api/auth.spec.ts`, which asserted the correct behavior under a `test.fail()` marker. When the fix shipped, the marked test passed, the run reported "expected to fail, but passed", and the marker was removed. The test now guards against the defect coming back. |
+| **Logging out ends every session of the account**, not just the current one, with the session cookie or a bearer token. | The log in and log out tests use a dedicated account, so they can never sign out the session the rest of the suite shares, and the tests on that account run one after the other. Once bearer logout was fixed, a parallel run let the logout test end the token another test was still using. |
+| **Three color contrast failures (WCAG 2.2 AA, 1.4.3).** The current page in the sidebar (3.74:1), the date line on the dashboard (4.36:1) and the P0 badge in the landing page preview (4.22:1) are below 4.5:1. | Found by the accessibility scans, which list them as known issues: they are reported on every run, anything new fails the scan, and a known issue that stops reproducing fails too, so the list stays current. Scanning before animations finish reports around 30 false contrast failures on the dashboard, so the scans wait for them to finish. |
+| **Sign-in is rate limited per IP.** | The suite signs in once and reuses the session. Only the log in and log out tests sign in on their own, so a full run stays well inside the limit. |
+
+Design decisions:
+
+- **Tests run against the live application**, so every test creates uniquely named data and deletes it when it ends, pass or fail. The test account holds no records after a run.
+- **Locators use roles and accessible names only.** A locator that stops matching often points at an accessibility regression, not just a markup change.
+- **Chromium by default, other browsers on demand.** Firefox, WebKit and a mobile viewport run with `pnpm test:cross-browser`, which keeps the everyday run fast and inside the sign-in limit.
 
 ## Planned areas
 
 | Area | Focus |
 | --- | --- |
 | **Playwright** | End-to-end UI flows: auth, protected routes, CRUD, search, filters, sorting, pagination |
-| **API testing** | Contract-level checks of `/api/v1`: status codes, response shapes, validation errors |
-| **Pact contract testing** | Consumer-driven contracts between the UI client and the API |
+| **API testing** | Contract-level checks of `/api/v1`: status codes, response shapes, validation errors (in place, see below) |
+| **Pact contract testing** | Consumer-driven contracts between an API client and the API (in place, see below) |
 | **Performance testing** | Load and stress profiles with k6 against list, detail and dashboard endpoints |
-| **Accessibility** | Automated WCAG checks with axe, plus keyboard and screen reader flows |
+| **Accessibility** | Automated WCAG 2.2 AA checks with axe (in place, see below), plus keyboard and screen reader flows |
 | **Visual testing** | Screenshot comparison for key pages and states |
-| **CI/CD** | Pipelines that boot the app and its dependencies and run every suite on each change |
-| **Security-oriented testing** | Authorization and tenant isolation (cross-user access), auth edge cases, input handling |
+| **CI/CD** | Pipelines that boot the app and its dependencies and run every suite on each change (in place: static checks on every pull request, and the full suite against the live app every night) |
+| **Security-oriented testing** | Authorization and tenant isolation (cross-user access, in place), auth edge cases, input handling |
 | **AI evaluations** | Evaluation harnesses for AI features, once the product has them |
 
 ## Approach
@@ -39,15 +58,21 @@ cp .env.example .env         # then fill in both accounts
 | --- | --- |
 | `BASE_URL` | Where the application runs. Defaults to the live URL above. |
 | `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` | The account every signed-in test uses. The setup project signs in once and shares the session. |
-| `E2E_LOGIN_USER_EMAIL` / `E2E_LOGIN_USER_PASSWORD` | A second account for the log in / log out test. Logging out ends every session of an account, so it must differ from the one above. |
+| `E2E_LOGIN_USER_EMAIL` / `E2E_LOGIN_USER_PASSWORD` | A second account for the log in / log out tests (UI and API). Logging out ends every session of an account, so it must differ from the one above. |
 
 | Script | What it does |
 | --- | --- |
-| `pnpm test` | Runs every Playwright project |
+| `pnpm test` | Runs every project, with Chromium as the only browser |
 | `pnpm test:smoke` | Runs only tests tagged `@smoke` |
+| `pnpm test:cross-browser` | Runs everything in Chromium, Firefox, WebKit and a Pixel 7 viewport |
+| `pnpm test:contract` | Generates the Pact contract, then verifies it against `BASE_URL` |
+| `pnpm test:migration:seed` / `pnpm test:migration:verify` | The two phases of an upgrade test, see [Database migration tests](#database-migration-tests) |
 | `pnpm test:headed` / `pnpm test:ui` | Headed run / Playwright UI mode |
 | `pnpm report` | Opens the last HTML report |
 | `pnpm typecheck` | TypeScript check |
+| `pnpm lint` | ESLint with type-aware TypeScript rules and the Playwright plugin (missing `await`, focused tests, tests without assertions) |
+| `pnpm format` / `pnpm format:check` | Prettier |
+| `pnpm check` | Types, lint and format together. CI runs it on every pull request |
 
 ## Architecture
 
@@ -56,18 +81,32 @@ src/
   config/env.ts         typed access to environment variables
   pages/                page objects, one per screen, all extending BasePage
   components/           parts shared across pages: app shell, dialogs
-  api/                  REST clients that arrange and clean up test data
+  api/
+    endpoints/          one client per resource, returning raw responses
+    applications.api.ts arranges and cleans up test data
+    schemas.ts          Zod schemas for every response body
+    assertions.ts       status, JSON and error-envelope checks, validated against the schemas
+    types.ts            types inferred from the schemas, plus request types
   data/                 factories for unique test data
+  contracts/            Pact consumer client, pact settings, provider states
+  a11y/                 axe scan helper and the known accessibility issues
+  migration/            upgrade-test dataset and account snapshots
   fixtures/test.ts      test.extend: page objects and API clients as fixtures
 tests/
   setup/                signs in once and saves the session
   api/                  API specs, no browser
+  contract/
+    consumer/           consumer tests against the Pact mock server
+    provider/           verifies the contract against the live API
+  migration/            seed and verify phases of an upgrade test
   ui/                   browser specs
+  a11y/                 accessibility scans
 ```
 
 - **Page objects** expose locators and user actions. Each defines `expectLoaded()`, the one assertion it owns; every other assertion lives in the spec.
 - **Locators** use roles and accessible names only, never CSS or test IDs.
 - **Fixtures** hand specs ready page objects, so specs never construct them.
+- **API specs** call endpoint clients and assert on the raw response, so status codes and error envelopes are part of every check. Every JSON body is also parsed with its Zod schema: objects are strict, so a field that appears, disappears or changes type fails the test that received it, with a message naming the field. The TypeScript types come from the same schemas, so they cannot drift from what the tests check. The `userRequest` fixture is an API context signed in with the saved session; the built-in `request` fixture stays anonymous.
 - **Test data** is unique per test and created through the API when a spec only needs it to exist. `applicationsApi` deletes everything a test created or tracked when the test ends, pass or fail.
 - **Sessions**: the `setup` project signs in through the UI and saves the session to `playwright/.auth/` (git-ignored). Browser projects reuse it. Signed-out specs opt out with an empty `storageState`.
 
@@ -76,9 +115,18 @@ tests/
 | Project | Runs | Notes |
 | --- | --- | --- |
 | `setup` | `tests/setup/` | Signs in and saves the session |
-| `api` | `tests/api/` | No browser |
-| `auth` | `tests/ui/auth.spec.ts` | Desktop Chrome, own account. Sign-in is rate limited per IP, so a full run signs in only twice. |
-| `chromium`, `firefox`, `webkit`, `mobile-chrome` | the rest of `tests/ui/` | Depend on `setup` |
+| `api` | `tests/api/` except `auth.spec.ts` and `isolation.spec.ts` | No browser. Depends on `setup` |
+| `auth-api` | `tests/api/auth.spec.ts` | Login account, no browser |
+| `auth` | `tests/ui/auth.spec.ts` | Login account, desktop Chrome. Runs after `auth-api`: logging out ends every session of the account, so the two must not overlap |
+| `isolation-api` | `tests/api/isolation.spec.ts` | Main account plus the login account as a second user. Runs after `auth`, so no logout can end its session mid-test |
+| `a11y` | `tests/a11y/` | Desktop Chrome. Depends on `setup` |
+| `chromium` | the rest of `tests/ui/` | Depends on `setup` |
+| `firefox`, `webkit`, `mobile-chrome` | the rest of `tests/ui/` | Only with `CROSS_BROWSER` set. Depend on `setup` |
+| `contract-consumer` | `tests/contract/consumer/` | No network. Writes `pacts/` (git-ignored) |
+| `contract-provider` | `tests/contract/provider/` | Depends on `contract-consumer`. Signs in once |
+| `migration-seed`, `migration-verify` | `tests/migration/` | Only with `MIGRATION` set, through the migration scripts. Depend on `setup` |
+
+Sign-in is rate limited per IP, so a full run signs in six times: `setup` once, `auth-api` twice, `auth` once, `isolation-api` once, `contract-provider` once.
 
 Traces are kept on first retry, and screenshots and videos only for failures. Locale is `en-US` and the time zone `UTC`. Setting `CI` turns on retries, `forbidOnly`, and the GitHub and JUnit reporters.
 
@@ -93,3 +141,82 @@ Happy paths only. Negative and edge cases come later.
 | `ui/auth.spec.ts` | Log in, log out |
 | `ui/navigation.spec.ts` | Home loads, primary navigation reaches every section |
 | `ui/applications.spec.ts` | Board and list views, add an application, open its details |
+
+## API suite
+
+| Spec | Covers |
+| --- | --- |
+| `api/auth.spec.ts` | Login returns a bearer token that authorizes requests; logout with that token ends the session |
+| `api/account.spec.ts` | Signed-in account, 401 without a session, JSON and CSV export |
+| `api/isolation.spec.ts` | A second account cannot read, search for, export, update or delete another account's application: every attempt answers 404, and the owner's copy stays unchanged |
+| `api/dashboard.spec.ts` | Summary counts an application in its stage, source and due follow-ups; 401 without a session |
+| `api/applications.spec.ts` | Create with defaults, read, partial update, applied and closed dates on stage changes, delete |
+| `api/applications-list.spec.ts` | Search with pagination meta, stage filter, sort, empty page past the end |
+| `api/applications-errors.spec.ts` | Validation errors with field paths, malformed and unknown ids, 401 on every call without a session |
+
+### Known issues
+
+Tests for known defects assert the correct behavior and are marked `test.fail()`, so the suite stays green while the defect exists and turns red once it is fixed, as a reminder to remove the marker.
+
+None open.
+
+## Contract tests (Pact)
+
+Consumer-driven contract tests for the applications API, using Pact specification v4 and no broker.
+
+1. **Consumer** (`contract-consumer`): `src/contracts/applications.client.ts` is a small typed client that serves as a reference consumer, the way a front end or integration would call the API. Its tests run it against Pact's mock server and write the contract to `pacts/`. The contract names only the fields the client reads, so the provider can add fields without breaking it.
+2. **Provider** (`contract-provider`): replays every interaction against `BASE_URL`. State handlers create the records an interaction needs through the public API and inject their ids into the request path. A request filter swaps the contract's placeholder token for a real one. Every record the run creates is deleted after each interaction.
+
+| Interaction | Provider state | Expected |
+| --- | --- | --- |
+| First page of applications | the user has applications | 200, list with pagination meta |
+| Read one application | an application exists | 200 |
+| Create an application | none | 201 |
+| Mark an application as applied | an application exists | 200, `appliedAt` set |
+| Delete an application | an application exists | 204 |
+| Read an application that does not exist | none | 404 `NOT_FOUND` |
+| Create without a company | none | 400 `VALIDATION_ERROR` |
+| List without a token | none | 401 `UNAUTHORIZED` |
+
+## Accessibility
+
+`tests/a11y/pages.spec.ts` scans the landing and login pages signed out, and the dashboard, the applications board and list, the add application dialog and settings signed in, with [axe](https://github.com/dequelabs/axe-core) against WCAG 2.2 A and AA.
+
+- Scans wait for running animations to finish, so colors are measured as the user sees them once the page settles.
+- Every violation, with the failing elements, is attached to the HTML report as `axe-violations.json`.
+- Known issues (`src/a11y/known-issues.ts`) are matched by rule and the element's visible text, not by CSS classes, and show up as annotations on the test. A new violation fails the scan, and so does a known issue that no longer reproduces.
+
+Automated rules cover only part of WCAG. Keyboard and screen reader flows are planned.
+
+## Database migration tests
+
+An upgrade test proves that a release with a database migration keeps every record, keeps derived figures and access rules, and that the application still works on migrated data. It runs in two phases, through the API only:
+
+1. **Seed**, against the version before the upgrade: creates a fixed dataset in two accounts and saves a snapshot of everything the API reports about each account.
+2. **Verify**, against the version after the upgrade: compares both accounts with the snapshot, then exercises the migrated records.
+
+The dataset covers what a migration can break: every stage and priority, every enum value, empty optional fields, maximum lengths (200-character text, a 10,000-character description, 10 tags of 40 characters), Unicode and emoji, the lowest and highest salary and a minimum equal to the maximum, all three dates set and unset, follow-ups due and not due, several pages of records, and records in a second account.
+
+| Check | Protects against |
+| --- | --- |
+| Keeps every record, and adds none | Rows lost or duplicated while tables, keys or types are rewritten |
+| Leaves every record unchanged, timestamps included | Truncated text, mangled Unicode, lost values, and backfills that touch `createdAt` or `updatedAt` |
+| Keeps the dashboard figures | Enum or status mappings that shift records into the wrong stage or priority |
+| Keeps each account's records private | Ownership or access rules lost or rebuilt wrongly |
+| Migrated records can still be updated, filtered, sorted and deleted | Broken indexes, constraints or defaults that only show up on writes |
+| Paths the upgrade removed answer 404 | Old endpoints left serving after a rename (set `MIGRATION_REMOVED_PATHS`) |
+
+### Run an upgrade test
+
+1. Start the version before the upgrade and point `BASE_URL` at it.
+2. `pnpm test:migration:seed` writes the snapshot to `MIGRATION_SNAPSHOT_DIR` (default `migration-snapshots/`, git-ignored).
+3. Apply the migration and start the new version, with the same database and accounts.
+4. `pnpm test:migration:verify` runs the checks, then deletes the seeded records. If verify cannot start, for example because sign-in is rate limited, it keeps the data so it can simply run again.
+
+| Variable | Used for |
+| --- | --- |
+| `APPLICATIONS_API_PATH` | Base path of the applications API, when one version serves it somewhere else |
+| `MIGRATION_SNAPSHOT_DIR` | Where the snapshot is written and read |
+| `MIGRATION_REMOVED_PATHS` | Comma-separated paths the upgrade removed; each must answer 404 |
+
+Each phase signs in twice (both accounts).
