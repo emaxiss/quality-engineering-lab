@@ -18,8 +18,8 @@ test.describe("accessibility, signed out", () => {
 });
 
 test.describe("accessibility, signed in", () => {
-  test("dashboard", async ({ page, dashboardPage }, testInfo) => {
-    await dashboardPage.goto();
+  test("home", async ({ page, homePage }, testInfo) => {
+    await homePage.goto();
     await expectAccessible(page, testInfo, { known: [ACTIVE_NAV_CONTRAST, DATE_LINE_CONTRAST] });
   });
 
