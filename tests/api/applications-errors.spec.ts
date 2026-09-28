@@ -37,7 +37,7 @@ test.describe("applications api errors", () => {
 
   test("returns not found for an id that does not exist", async ({ applicationsEndpoint }) => {
     await expectApiError(await applicationsEndpoint.get(UNKNOWN_ID), 404, "NOT_FOUND");
-    await expectApiError(await applicationsEndpoint.update(UNKNOWN_ID, { priority: "P0" }), 404, "NOT_FOUND");
+    await expectApiError(await applicationsEndpoint.update(UNKNOWN_ID, { priority: "HIGH" }), 404, "NOT_FOUND");
     await expectApiError(await applicationsEndpoint.delete(UNKNOWN_ID), 404, "NOT_FOUND");
   });
 

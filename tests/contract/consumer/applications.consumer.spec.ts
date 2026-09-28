@@ -19,7 +19,7 @@ const application = {
   company: string(CONTRACT_COMPANY),
   title: string("QA Engineer"),
   status: regex(/^(SAVED|APPLIED|INTERVIEW|OFFER|REJECTED|WITHDRAWN|ARCHIVED)$/, "SAVED"),
-  priority: regex(/^P[0-2]$/, "P1"),
+  priority: regex(/^(HIGH|MEDIUM|LOW)$/, "MEDIUM"),
   // Any number of tags, including none.
   tags: atLeastLike(string("contract"), 0, 1),
   createdAt: timestamp,
