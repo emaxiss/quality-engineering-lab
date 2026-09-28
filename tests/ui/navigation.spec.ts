@@ -8,12 +8,7 @@ test.describe("navigation", { tag: "@smoke" }, () => {
     await expect(homePage.focusSection).toBeVisible();
   });
 
-  test("primary navigation reaches every section", async ({
-    homePage,
-    applicationsPage,
-    settingsPage,
-    appShell,
-  }) => {
+  test("primary navigation reaches every section", async ({ homePage, applicationsPage, settingsPage, appShell }) => {
     await homePage.goto();
 
     await appShell.goTo("Applications");
