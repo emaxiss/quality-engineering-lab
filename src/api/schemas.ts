@@ -7,7 +7,7 @@ const timestamp = z.iso.datetime();
 const count = z.int().nonnegative();
 
 export const statusSchema = z.enum(["SAVED", "APPLIED", "INTERVIEW", "OFFER", "REJECTED", "WITHDRAWN", "ARCHIVED"]);
-export const prioritySchema = z.enum(["P0", "P1", "P2"]);
+export const prioritySchema = z.enum(["HIGH", "MEDIUM", "LOW"]);
 export const workModeSchema = z.enum(["REMOTE", "HYBRID", "ONSITE"]);
 export const employmentTypeSchema = z.enum(["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP"]);
 export const sourceSchema = z.enum([

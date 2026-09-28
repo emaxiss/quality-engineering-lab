@@ -17,6 +17,6 @@ export const DATE_LINE_CONTRAST: KnownIssue = {
 
 export const PRIORITY_BADGE_CONTRAST: KnownIssue = {
   rule: "color-contrast",
-  text: /^▴?P0$/,
-  description: "P0 priority badge in the landing page preview: 12px orange on light orange, 4.22:1 (needs 4.5:1)",
+  text: /^High$/,
+  description: "High priority badge in the landing page preview: 12px orange on light orange, 4.22:1 (needs 4.5:1)",
 };

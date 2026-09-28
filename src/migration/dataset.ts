@@ -24,7 +24,7 @@ export function buildDataset(marker: string): { main: Record[]; second: Record[]
       company: company("Complete"),
       title: "Every optional field set",
       status: "APPLIED",
-      priority: "P1",
+      priority: "MEDIUM",
       location: "Remote (US)",
       workMode: "REMOTE",
       employmentType: "FULL_TIME",
@@ -42,7 +42,7 @@ export function buildDataset(marker: string): { main: Record[]; second: Record[]
       company: company("Interview"),
       title: "Follow-up not due",
       status: "INTERVIEW",
-      priority: "P2",
+      priority: "LOW",
       workMode: "HYBRID",
       employmentType: "CONTRACT",
       source: "recruiter",
@@ -53,7 +53,7 @@ export function buildDataset(marker: string): { main: Record[]; second: Record[]
       company: company("Offer"),
       title: "Salary minimum equals maximum",
       status: "OFFER",
-      priority: "P0",
+      priority: "HIGH",
       workMode: "ONSITE",
       employmentType: "PART_TIME",
       source: "company_site",
@@ -96,8 +96,8 @@ export function buildDataset(marker: string): { main: Record[]; second: Record[]
       salaryMax: 10000000,
       salaryCurrency: "GBP",
     },
-    { company: company("Page filler A"), title: "Saved", priority: "P0" },
-    { company: company("Page filler B"), title: "Saved", priority: "P2" },
+    { company: company("Page filler A"), title: "Saved", priority: "HIGH" },
+    { company: company("Page filler B"), title: "Saved", priority: "LOW" },
   ];
 
   const second: Record[] = [

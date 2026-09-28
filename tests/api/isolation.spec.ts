@@ -25,7 +25,7 @@ test.describe("cross-user isolation", () => {
     owner = await playwright.request.newContext({ baseURL, storageState: AUTH_STATE_PATH });
     other = await signedInContext(playwright, baseURL, env.loginUserEmail, env.loginUserPassword);
     ownerData = new ApplicationsApi(owner);
-    record = await ownerData.create(buildApplication({ priority: "P0", tags: ["private"] }));
+    record = await ownerData.create(buildApplication({ priority: "HIGH", tags: ["private"] }));
   });
 
   test.afterAll(async () => {

@@ -19,7 +19,7 @@ test.describe("applications api", () => {
       ...input,
       id: expect.stringMatching(UUID),
       status: "SAVED",
-      priority: "P1",
+      priority: "MEDIUM",
       tags: [],
       appliedAt: null,
       closedAt: null,
@@ -28,7 +28,7 @@ test.describe("applications api", () => {
   });
 
   test("reads an application by id", async ({ applicationsEndpoint, applicationsApi }) => {
-    const created = await applicationsApi.create(buildApplication({ priority: "P0", tags: ["api", "smoke"] }));
+    const created = await applicationsApi.create(buildApplication({ priority: "HIGH", tags: ["api", "smoke"] }));
 
     const { data } = await expectJson(await applicationsEndpoint.get(created.id), 200, applicationResponse);
 
@@ -37,7 +37,7 @@ test.describe("applications api", () => {
 
   test("updates only the fields it is sent", async ({ applicationsEndpoint, applicationsApi }) => {
     const created = await applicationsApi.create(buildApplication());
-    const changes = { priority: "P0", description: "Updated through the API" } as const;
+    const changes = { priority: "HIGH", description: "Updated through the API" } as const;
 
     const { data } = await expectJson(await applicationsEndpoint.update(created.id, changes), 200, applicationResponse);
 

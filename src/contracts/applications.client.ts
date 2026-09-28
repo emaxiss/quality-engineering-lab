@@ -5,7 +5,7 @@
  */
 
 export type Status = "SAVED" | "APPLIED" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN" | "ARCHIVED";
-export type Priority = "P0" | "P1" | "P2";
+export type Priority = "HIGH" | "MEDIUM" | "LOW";
 
 /** Only the fields this consumer reads. The provider may return more. */
 export interface Application {
