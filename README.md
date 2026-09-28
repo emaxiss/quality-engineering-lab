@@ -1,5 +1,7 @@
 # Quality Engineering Lab
 
+[![Nightly](https://github.com/emaxiss/quality-engineering-lab/actions/workflows/nightly.yml/badge.svg)](https://github.com/emaxiss/quality-engineering-lab/actions/workflows/nightly.yml) [![Checks](https://github.com/emaxiss/quality-engineering-lab/actions/workflows/checks.yml/badge.svg)](https://github.com/emaxiss/quality-engineering-lab/actions/workflows/checks.yml)
+
 A hands-on Quality Engineering portfolio: test suites for a SaaS web application, covering its UI and its REST API (`/api/v1`).
 
 **Application under test:** https://rolequeue.vercel.app (open to anyone: sign up, or use "Try the demo" for a private account with sample data).
@@ -33,7 +35,7 @@ Design decisions:
 | **Performance testing** | Load and stress profiles with k6 against list, detail and dashboard endpoints |
 | **Accessibility** | Automated WCAG 2.2 AA checks with axe (in place, see below), plus keyboard and screen reader flows |
 | **Visual testing** | Screenshot comparison for key pages and states |
-| **CI/CD** | Pipelines that boot the app and its dependencies and run every suite on each change |
+| **CI/CD** | Pipelines that boot the app and its dependencies and run every suite on each change (in place: static checks on every pull request, and the full suite against the live app every night) |
 | **Security-oriented testing** | Authorization and tenant isolation (cross-user access, in place), auth edge cases, input handling |
 | **AI evaluations** | Evaluation harnesses for AI features, once the product has them |
 
