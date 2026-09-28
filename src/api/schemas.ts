@@ -77,7 +77,7 @@ export const accountSchema = z.strictObject({
   email: z.email(),
   displayName: z.string().nullable(),
   createdAt: timestamp,
-  opportunityCount: count,
+  applicationCount: count,
   isDemo: z.boolean(),
   demoExpiresAt: timestamp.nullable(),
 });
@@ -85,7 +85,7 @@ export const accountSchema = z.strictObject({
 export const accountExportSchema = z.strictObject({
   exportedAt: timestamp,
   account: z.strictObject({ email: z.email(), displayName: z.string().nullable(), createdAt: timestamp }),
-  opportunities: z.array(applicationSchema),
+  applications: z.array(applicationSchema),
 });
 
 export const healthSchema = z.strictObject({

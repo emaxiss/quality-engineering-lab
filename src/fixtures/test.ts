@@ -6,7 +6,7 @@ import { DashboardEndpoint } from "@/api/endpoints/dashboard.endpoint";
 import { AUTH_STATE_PATH } from "@/config/env";
 import { AppShell } from "@/components/app-shell.component";
 import { ApplicationsPage } from "@/pages/applications.page";
-import { DashboardPage } from "@/pages/dashboard.page";
+import { HomePage } from "@/pages/home.page";
 import { LandingPage } from "@/pages/landing.page";
 import { LoginPage } from "@/pages/login.page";
 import { SettingsPage } from "@/pages/settings.page";
@@ -14,7 +14,7 @@ import { SettingsPage } from "@/pages/settings.page";
 interface Fixtures {
   landingPage: LandingPage;
   loginPage: LoginPage;
-  dashboardPage: DashboardPage;
+  homePage: HomePage;
   applicationsPage: ApplicationsPage;
   settingsPage: SettingsPage;
   appShell: AppShell;
@@ -28,7 +28,7 @@ interface Fixtures {
 export const test = base.extend<Fixtures>({
   landingPage: async ({ page }, use) => use(new LandingPage(page)),
   loginPage: async ({ page }, use) => use(new LoginPage(page)),
-  dashboardPage: async ({ page }, use) => use(new DashboardPage(page)),
+  homePage: async ({ page }, use) => use(new HomePage(page)),
   applicationsPage: async ({ page }, use) => use(new ApplicationsPage(page)),
   settingsPage: async ({ page }, use) => use(new SettingsPage(page)),
   appShell: async ({ page }, use) => use(new AppShell(page)),

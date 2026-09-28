@@ -56,25 +56,25 @@ export class ApplicationsClient {
     const params = new URLSearchParams(Object.entries(query).map(([key, value]) => [key, String(value)]));
     const body = await this.call<{ data: Application[]; meta: Omit<Page<Application>, "items"> }>(
       "GET",
-      `/api/v1/opportunities?${params}`,
+      `/api/v1/applications?${params}`,
     );
     return { items: body.data, ...body.meta };
   }
 
   async get(id: string): Promise<Application> {
-    return (await this.call<{ data: Application }>("GET", `/api/v1/opportunities/${id}`)).data;
+    return (await this.call<{ data: Application }>("GET", `/api/v1/applications/${id}`)).data;
   }
 
   async create(input: NewApplication): Promise<Application> {
-    return (await this.call<{ data: Application }>("POST", "/api/v1/opportunities", input)).data;
+    return (await this.call<{ data: Application }>("POST", "/api/v1/applications", input)).data;
   }
 
   async update(id: string, changes: Partial<NewApplication>): Promise<Application> {
-    return (await this.call<{ data: Application }>("PATCH", `/api/v1/opportunities/${id}`, changes)).data;
+    return (await this.call<{ data: Application }>("PATCH", `/api/v1/applications/${id}`, changes)).data;
   }
 
   async delete(id: string): Promise<void> {
-    await this.call<void>("DELETE", `/api/v1/opportunities/${id}`);
+    await this.call<void>("DELETE", `/api/v1/applications/${id}`);
   }
 
   private async call<T>(method: string, path: string, body?: unknown): Promise<T> {

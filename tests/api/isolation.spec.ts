@@ -53,7 +53,7 @@ test.describe("cross-user isolation", () => {
     expect(found.meta.total).toBe(0);
 
     const exported = await expectJson(await new AccountEndpoint(other).export("json"), 200, accountExportSchema);
-    expect(exported.opportunities.map((application) => application.id)).not.toContain(record.id);
+    expect(exported.applications.map((application) => application.id)).not.toContain(record.id);
   });
 
   test("another account cannot update it", async () => {

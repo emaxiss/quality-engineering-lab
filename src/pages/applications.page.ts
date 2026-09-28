@@ -8,7 +8,7 @@ const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&
 export type ApplicationsView = "Board" | "List";
 
 export class ApplicationsPage extends BasePage {
-  protected readonly path = "/opportunities";
+  protected readonly path = "/applications";
 
   readonly heading = this.page.getByRole("heading", { level: 1, name: "Applications" });
   readonly addButton = this.page.getByRole("main").getByRole("button", { name: "Add application", exact: true });
@@ -43,13 +43,13 @@ export class ApplicationsPage extends BasePage {
 
   /** Id of the application whose details panel is open, read from the URL. */
   openApplicationId(): string {
-    const id = new URL(this.page.url()).pathname.match(/^\/opportunities\/([^/]+)$/)?.[1];
+    const id = new URL(this.page.url()).pathname.match(/^\/applications\/([^/]+)$/)?.[1];
     if (!id) throw new Error(`No application is open at ${this.page.url()}`);
     return id;
   }
 
   async expectLoaded(): Promise<void> {
-    await expect(this.page).toHaveURL(/\/opportunities/);
+    await expect(this.page).toHaveURL(/\/applications/);
     await expect(this.heading).toBeVisible();
   }
 }

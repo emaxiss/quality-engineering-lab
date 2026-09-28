@@ -11,7 +11,7 @@ const TOKEN = "contract-test-token";
 
 const timestamp = regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/, "2026-09-27T03:28:38.049Z");
 const authorization = { Authorization: regex(/^Bearer .+$/, `Bearer ${TOKEN}`) };
-const applicationPath = fromProviderState("/api/v1/opportunities/${id}", `/api/v1/opportunities/${EXAMPLE_ID}`);
+const applicationPath = fromProviderState("/api/v1/applications/${id}", `/api/v1/applications/${EXAMPLE_ID}`);
 
 /** Shape of an application as this consumer reads it. */
 const application = {
@@ -39,7 +39,7 @@ test.describe("applications api contract (consumer)", () => {
       .addInteraction()
       .given(States.hasApplications)
       .uponReceiving("a request for the first page of applications")
-      .withRequest("GET", "/api/v1/opportunities", (request) =>
+      .withRequest("GET", "/api/v1/applications", (request) =>
         request.query({ page: "1", pageSize: "10" }).headers(authorization),
       )
       .willRespondWith(200, (response) =>
@@ -76,7 +76,7 @@ test.describe("applications api contract (consumer)", () => {
     await pact
       .addInteraction()
       .uponReceiving("a request to create an application")
-      .withRequest("POST", "/api/v1/opportunities", (request) => request.headers(authorization).jsonBody(input))
+      .withRequest("POST", "/api/v1/applications", (request) => request.headers(authorization).jsonBody(input))
       .willRespondWith(201, (response) =>
         response.jsonBody({ data: { ...application, company: CONTRACT_COMPANY, status: "SAVED" } }),
       )
@@ -122,7 +122,7 @@ test.describe("applications api contract (consumer)", () => {
     await pact
       .addInteraction()
       .uponReceiving("a request for an application that does not exist")
-      .withRequest("GET", `/api/v1/opportunities/${UNKNOWN_ID}`, (request) => request.headers(authorization))
+      .withRequest("GET", `/api/v1/applications/${UNKNOWN_ID}`, (request) => request.headers(authorization))
       .willRespondWith(404, (response) => response.jsonBody(errorBody("NOT_FOUND")))
       .executeTest(async (mockServer) => {
         const error = await new ApplicationsClient(mockServer.url, TOKEN).get(UNKNOWN_ID).catch((e: unknown) => e);
@@ -136,7 +136,7 @@ test.describe("applications api contract (consumer)", () => {
     await pact
       .addInteraction()
       .uponReceiving("a request to create an application without a company")
-      .withRequest("POST", "/api/v1/opportunities", (request) =>
+      .withRequest("POST", "/api/v1/applications", (request) =>
         request.headers(authorization).jsonBody({ title: "QA Engineer" }),
       )
       .willRespondWith(400, (response) => response.jsonBody(errorBody("VALIDATION_ERROR")))
@@ -152,7 +152,7 @@ test.describe("applications api contract (consumer)", () => {
     await pact
       .addInteraction()
       .uponReceiving("a request for applications without a token")
-      .withRequest("GET", "/api/v1/opportunities", (request) => request.query({ page: "1", pageSize: "10" }))
+      .withRequest("GET", "/api/v1/applications", (request) => request.query({ page: "1", pageSize: "10" }))
       .willRespondWith(401, (response) => response.jsonBody(errorBody("UNAUTHORIZED")))
       .executeTest(async (mockServer) => {
         const error = await new ApplicationsClient(mockServer.url)

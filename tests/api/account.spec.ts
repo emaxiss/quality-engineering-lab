@@ -13,7 +13,7 @@ test.describe("account api", () => {
       id: expect.any(String),
       email: env.userEmail,
       createdAt: expect.any(String),
-      opportunityCount: expect.any(Number),
+      applicationCount: expect.any(Number),
       isDemo: false,
     });
   });
@@ -29,7 +29,7 @@ test.describe("account api", () => {
 
     expect(body.account.email).toBe(env.userEmail);
     expect(Date.parse(body.exportedAt)).not.toBeNaN();
-    expect(body.opportunities).toContainEqual(expect.objectContaining({ id: created.id, company: created.company }));
+    expect(body.applications).toContainEqual(expect.objectContaining({ id: created.id, company: created.company }));
   });
 
   test("exports applications as CSV", async ({ accountEndpoint, applicationsApi }) => {

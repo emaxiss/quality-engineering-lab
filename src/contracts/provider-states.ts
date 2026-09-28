@@ -1,7 +1,7 @@
 import type { APIRequestContext } from "@playwright/test";
 import { CONTRACT_COMPANY } from "@/contracts/pact.config";
 
-const BASE_PATH = "/api/v1/opportunities";
+const BASE_PATH = "/api/v1/applications";
 
 /**
  * Puts the live provider into the states the contract names, through its public API.
