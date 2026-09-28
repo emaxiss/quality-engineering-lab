@@ -2,11 +2,23 @@
 
 [![Nightly](https://github.com/emaxiss/quality-engineering-lab/actions/workflows/nightly.yml/badge.svg)](https://github.com/emaxiss/quality-engineering-lab/actions/workflows/nightly.yml) [![Checks](https://github.com/emaxiss/quality-engineering-lab/actions/workflows/checks.yml/badge.svg)](https://github.com/emaxiss/quality-engineering-lab/actions/workflows/checks.yml)
 
-A hands-on Quality Engineering portfolio: test suites for a SaaS web application, covering its UI and its REST API (`/api/v1`).
+Playwright and TypeScript test suites for a live SaaS web application, a job application tracker, through its UI and its REST API (`/api/v1`). The full suite runs every night against production.
 
-**Application under test:** https://rolequeue.vercel.app (open to anyone: sign up, or use "Try the demo" for a private account with sample data).
+**Application under test:** https://rolequeue.vercel.app. Anyone can sign up, or use "Try the demo" for a private account with sample data.
 
-> Status: Playwright page objects, fixtures, a UI smoke suite, an API suite with response schemas, cross-user isolation tests, Pact contract tests, database migration tests and WCAG accessibility scans are in place. The other areas below are planned.
+## What this demonstrates
+
+| Area | What is here | Start with |
+| --- | --- | --- |
+| **UI automation** | Page objects and fixtures, locators by role and accessible name only, one shared signed-in session, Chromium by default with Firefox, WebKit and a mobile viewport on demand | `src/pages/`, `src/fixtures/test.ts`, `tests/ui/` |
+| **API automation** | Endpoint clients that return raw responses, so status codes and error envelopes are part of every check; validation errors, pagination, filters, sorting | `src/api/`, `tests/api/` |
+| **Response schemas** | A strict Zod schema for every response body: a field that appears, disappears or changes type fails the test. The TypeScript types are inferred from the same schemas | `src/api/schemas.ts` |
+| **Authorization** | A second account tries to read, search for, export, update and delete another account's record: every attempt must answer 404 and leave the owner's copy unchanged | `tests/api/isolation.spec.ts` |
+| **Contract testing** | Pact v4: a consumer client writes the contract, and provider verification replays it against the live API with state handlers | `tests/contract/` |
+| **Accessibility** | axe scans against WCAG 2.2 AA, with a known-issue list that fails when an issue is fixed, so the list cannot go stale | `tests/a11y/`, `src/a11y/` |
+| **Database migrations** | Upgrade tests: seed and snapshot before a release, verify after it (every record, timestamps, dashboard figures, access rules), with expected value rewrites declared up front | `tests/migration/`, `src/migration/` |
+| **CI quality gates** | Types, type-aware ESLint with the Playwright plugin, and Prettier required on every pull request; the full suite nightly against production; CodeQL | `.github/workflows/` |
+| **Defects to regressions** | A logout defect caught by a `test.fail()` test that flipped to a guard once the fix shipped; three contrast failures tracked as known issues | [Findings](#findings-and-decisions) |
 
 ## Findings and decisions
 
@@ -15,38 +27,43 @@ What testing this application surfaced, and how it shaped the suites.
 | Finding | How the suites handle it |
 | --- | --- |
 | **Logging out with a bearer token did not end the session (fixed).** `POST /api/v1/auth/logout` answered 204, but the token kept authorizing requests until it expired, about an hour later. Logging out with the session cookie did end the session. | Found by `tests/api/auth.spec.ts`, which asserted the correct behavior under a `test.fail()` marker. When the fix shipped, the marked test passed, the run reported "expected to fail, but passed", and the marker was removed. The test now guards against the defect coming back. |
-| **Logging out ends every session of the account**, not just the current one, with the session cookie or a bearer token. | The log in and log out tests use a dedicated account, so they can never sign out the session the rest of the suite shares, and the tests on that account run one after the other. Once bearer logout was fixed, a parallel run let the logout test end the token another test was still using. |
-| **Three color contrast failures (WCAG 2.2 AA, 1.4.3).** The current page in the sidebar (3.74:1), the date line on the dashboard (4.36:1) and the High priority badge in the landing page preview (4.22:1) are below 4.5:1. | Found by the accessibility scans, which list them as known issues: they are reported on every run, anything new fails the scan, and a known issue that stops reproducing fails too, so the list stays current. Scanning before animations finish reports around 30 false contrast failures on the dashboard, so the scans wait for them to finish. |
-| **Sign-in is rate limited per IP.** | The suite signs in once and reuses the session. Only the log in and log out tests sign in on their own, so a full run stays well inside the limit. |
+| **Logging out ends every session of the account**, not just the current one, with the session cookie or a bearer token. | The log in and log out tests use a dedicated account, so they can never sign out the session the rest of the suite shares, and the tests on that account run one after the other. Once bearer logout was fixed, a parallel run let the logout test end the token another test was still using: that test had only passed because of the defect. |
+| **Three color contrast failures (WCAG 2.2 AA, 1.4.3).** The current page in the sidebar (3.74:1), the date line on Home (4.36:1) and the High priority badge in the landing page preview (4.22:1) are below 4.5:1. | Found by the accessibility scans, which list them as known issues: they are reported on every run, anything new fails the scan, and a known issue that stops reproducing fails too. Scanning before animations finish reports around 30 false contrast failures on Home, so the scans wait for animations to finish. |
+| **Two releases changed the database**: a table rename that moved the API to new paths, and a rewrite of every stored priority value. | Both were checked with the upgrade test before they shipped: seed on the old version, migrate the same database, verify on the new one. The second declared its value rewrite (`P0` to `HIGH` and so on), so verify required exactly that change and nothing else. |
+| **Sign-in is rate limited per IP.** | The suite signs in once and reuses the session. Only the log in, log out, isolation and contract provider tests sign in on their own, so a full run stays well inside the limit. |
 
 Design decisions:
 
-- **Tests run against the live application**, so every test creates uniquely named data and deletes it when it ends, pass or fail. The test account holds no records after a run.
-- **Locators use roles and accessible names only.** A locator that stops matching often points at an accessibility regression, not just a markup change.
+- **Tests run against the live application**, so every test creates uniquely named data and deletes it when it ends, pass or fail. The test accounts hold no records after a run.
+- **Locators use roles and accessible names only**, never CSS or test IDs. A locator that stops matching often points at an accessibility regression, not just a markup change.
 - **Chromium by default, other browsers on demand.** Firefox, WebKit and a mobile viewport run with `pnpm test:cross-browser`, which keeps the everyday run fast and inside the sign-in limit.
+- **Suites are independent**: each runs on its own, locally or in CI.
 
-## Planned areas
+## Status
 
-| Area | Focus |
-| --- | --- |
-| **Playwright** | End-to-end UI flows: auth, protected routes, CRUD, search, filters, sorting, pagination |
-| **API testing** | Contract-level checks of `/api/v1`: status codes, response shapes, validation errors (in place, see below) |
-| **Pact contract testing** | Consumer-driven contracts between an API client and the API (in place, see below) |
-| **Performance testing** | Load and stress profiles with k6 against list, detail and dashboard endpoints |
-| **Accessibility** | Automated WCAG 2.2 AA checks with axe (in place, see below), plus keyboard and screen reader flows |
-| **Visual testing** | Screenshot comparison for key pages and states |
-| **CI/CD** | Pipelines that boot the app and its dependencies and run every suite on each change (in place: static checks on every pull request, and the full suite against the live app every night) |
-| **Security-oriented testing** | Authorization and tenant isolation (cross-user access, in place), auth edge cases, input handling |
-| **AI evaluations** | Evaluation harnesses for AI features, once the product has them |
+**In place:** UI smoke suite, API suite with response schemas, cross-user isolation, Pact contracts, WCAG scans, database upgrade tests, pull request checks, and the nightly run against production.
 
-## Approach
+**Planned** (not implemented yet):
 
-- Prefer accessible, semantic selectors over test IDs.
-- Keep each suite independent, reproducible, and runnable locally and in CI.
+- **UI flows beyond the smoke suite**: editing, stage changes, search, filters, sorting and pagination through the UI.
+- **Performance testing** with k6: load and stress profiles for the list, detail and dashboard endpoints.
+- **Visual regression**: screenshot comparison for key pages and states.
+- **Keyboard and screen reader flows**, beyond what the automated WCAG rules cover.
+- **Security edge cases**: auth edge cases such as session expiry, and input handling.
+- **AI evaluations**: evaluation harnesses for the AI features planned for the application.
+
+## CI
+
+| Workflow | When | What |
+| --- | --- | --- |
+| `checks.yml` | Every pull request and push to `main` | `pnpm check` (types, lint, format) and a dry `playwright test --list`. Required to merge into `main` |
+| `nightly.yml` | Daily at 06:00 UTC, and on demand | The full suite against the live application, with the two test accounts from repository secrets. No report artifacts: traces record typed input, and artifacts of a public repository can be downloaded by anyone |
+
+CodeQL scans every pull request, and Dependabot watches the dependencies. The application's own pull request pipeline also runs these suites against a local build, including the upgrade test on every pull request that adds a migration.
 
 ## Setup
 
-Requirements: Node.js 20.12+ (see `.nvmrc`), pnpm 10, and two accounts in the application under test (sign up at the live URL above).
+Requirements: Node.js 20.19+ (see `.nvmrc`), pnpm 10, and two accounts in the application under test (sign up at the live URL above).
 
 ```bash
 pnpm install
@@ -182,13 +199,13 @@ Consumer-driven contract tests for the applications API, using Pact specificatio
 
 ## Accessibility
 
-`tests/a11y/pages.spec.ts` scans the landing and login pages signed out, and the dashboard, the applications board and list, the add application dialog and settings signed in, with [axe](https://github.com/dequelabs/axe-core) against WCAG 2.2 A and AA.
+`tests/a11y/pages.spec.ts` scans the landing and login pages signed out, and Home, the applications board and list, the add application dialog and settings signed in, with [axe](https://github.com/dequelabs/axe-core) against WCAG 2.2 A and AA.
 
 - Scans wait for running animations to finish, so colors are measured as the user sees them once the page settles.
 - Every violation, with the failing elements, is attached to the HTML report as `axe-violations.json`.
 - Known issues (`src/a11y/known-issues.ts`) are matched by rule and the element's visible text, not by CSS classes, and show up as annotations on the test. A new violation fails the scan, and so does a known issue that no longer reproduces.
 
-Automated rules cover only part of WCAG. Keyboard and screen reader flows are planned.
+Automated rules cover only part of WCAG. Keyboard and screen reader flows are coming next.
 
 ## Database migration tests
 
