@@ -66,6 +66,7 @@ cp .env.example .env         # then fill in both accounts
 | `pnpm test:smoke` | Runs only tests tagged `@smoke` |
 | `pnpm test:cross-browser` | Runs everything in Chromium, Firefox, WebKit and a Pixel 7 viewport |
 | `pnpm test:contract` | Generates the Pact contract, then verifies it against `BASE_URL` |
+| `pnpm test:unit` | Unit tests for helpers, no network |
 | `pnpm test:migration:seed` / `pnpm test:migration:verify` | The two phases of an upgrade test, see [Database migration tests](#database-migration-tests) |
 | `pnpm test:headed` / `pnpm test:ui` | Headed run / Playwright UI mode |
 | `pnpm report` | Opens the last HTML report |
@@ -115,6 +116,7 @@ tests/
 | Project | Runs | Notes |
 | --- | --- | --- |
 | `setup` | `tests/setup/` | Signs in and saves the session |
+| `unit` | `tests/unit/` | Plain functions, no browser, no network |
 | `api` | `tests/api/` except `auth.spec.ts` and `isolation.spec.ts` | No browser. Depends on `setup` |
 | `auth-api` | `tests/api/auth.spec.ts` | Login account, no browser |
 | `auth` | `tests/ui/auth.spec.ts` | Login account, desktop Chrome. Runs after `auth-api`: logging out ends every session of the account, so the two must not overlap |
@@ -200,7 +202,7 @@ The dataset covers what a migration can break: every stage and priority, every e
 | Check | Protects against |
 | --- | --- |
 | Keeps every record, and adds none | Rows lost or duplicated while tables, keys or types are rewritten |
-| Leaves every record unchanged, timestamps included | Truncated text, mangled Unicode, lost values, and backfills that touch `createdAt` or `updatedAt` |
+| Leaves every record as it was, apart from the expected changes, timestamps included | Truncated text, mangled Unicode, lost values, value rewrites that go further than intended, and backfills that touch `createdAt` or `updatedAt` |
 | Keeps the dashboard figures | Enum or status mappings that shift records into the wrong stage or priority |
 | Keeps each account's records private | Ownership or access rules lost or rebuilt wrongly |
 | Migrated records can still be updated, filtered, sorted and deleted | Broken indexes, constraints or defaults that only show up on writes |
@@ -218,5 +220,6 @@ The dataset covers what a migration can break: every stage and priority, every e
 | `APPLICATIONS_API_PATH` | Base path of the applications API, when one version serves it somewhere else |
 | `MIGRATION_SNAPSHOT_DIR` | Where the snapshot is written and read |
 | `MIGRATION_REMOVED_PATHS` | Comma-separated paths the upgrade removed; each must answer 404 |
+| `MIGRATION_EXPECTED_CHANGES` | Values the upgrade rewrites, as JSON per field, for example `{"status":{"WITHDRAWN":"DECLINED"}}`. Verify applies them to the snapshot before comparing, including the keys of per-stage counts, so it checks that the migration rewrote exactly those values and nothing else |
 
 Each phase signs in twice (both accounts).

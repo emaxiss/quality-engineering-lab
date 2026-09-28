@@ -31,6 +31,10 @@ export const env = {
   get migrationSnapshotDir(): string {
     return process.env.MIGRATION_SNAPSHOT_DIR ?? "migration-snapshots";
   },
+  /** Value changes the upgrade makes, as JSON, for example `{"status":{"OLD":"NEW"}}`. See src/migration/expected-changes.ts. */
+  get migrationExpectedChanges(): string | undefined {
+    return process.env.MIGRATION_EXPECTED_CHANGES;
+  },
   /** Paths an upgrade removed, comma-separated. The verify phase expects each to answer 404. */
   get migrationRemovedPaths(): string[] {
     return (process.env.MIGRATION_REMOVED_PATHS ?? "")
