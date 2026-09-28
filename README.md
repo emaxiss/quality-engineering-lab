@@ -43,12 +43,14 @@ Design decisions:
 
 **In place:** UI smoke suite, API suite with response schemas, cross-user isolation, Pact contracts, WCAG scans, database upgrade tests, pull request checks, and the nightly run against production.
 
-**Coming next** (not implemented yet):
+**Planned** (not implemented yet):
 
+- **UI flows beyond the smoke suite**: editing, stage changes, search, filters, sorting and pagination through the UI.
 - **Performance testing** with k6: load and stress profiles for the list, detail and dashboard endpoints.
 - **Visual regression**: screenshot comparison for key pages and states.
 - **Keyboard and screen reader flows**, beyond what the automated WCAG rules cover.
-- **Security edge cases**: session expiry and input handling.
+- **Security edge cases**: auth edge cases such as session expiry, and input handling.
+- **AI evaluations**: evaluation harnesses for the AI features planned for the application.
 
 ## CI
 
