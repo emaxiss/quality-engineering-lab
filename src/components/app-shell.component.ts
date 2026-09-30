@@ -6,10 +6,12 @@ export type Section = "Home" | "Applications" | "Settings";
 export class AppShell {
   readonly navigation: Locator;
   readonly logoutButton: Locator;
+  readonly skipLink: Locator;
 
   constructor(page: Page) {
     this.navigation = page.getByRole("navigation", { name: "Primary navigation" });
     this.logoutButton = page.getByRole("button", { name: "Logout" });
+    this.skipLink = page.getByRole("link", { name: "Skip to content" });
   }
 
   link(section: Section): Locator {
