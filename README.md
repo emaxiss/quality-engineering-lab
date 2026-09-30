@@ -15,7 +15,7 @@ Playwright and TypeScript test suites for a live SaaS web application, a job app
 | **Response schemas** | A strict Zod schema for every response body: a field that appears, disappears or changes type fails the test. The TypeScript types are inferred from the same schemas | `src/api/schemas.ts` |
 | **Authorization** | A second account tries to read, search for, export, update and delete another account's record: every attempt must answer 404 and leave the owner's copy unchanged | `tests/api/isolation.spec.ts` |
 | **Contract testing** | Pact v4: a consumer client writes the contract, and provider verification replays it against the live API with state handlers | `tests/contract/` |
-| **Accessibility** | axe scans against WCAG 2.2 AA, with a known-issue list that fails when an issue is fixed, so the list cannot go stale | `tests/a11y/`, `src/a11y/` |
+| **Accessibility** | axe scans against WCAG 2.2 AA, with a known-issue list that fails when an issue is fixed, so the list cannot go stale; keyboard-only flows: adding, opening, moving and sorting applications with Tab, Enter, Space, Escape and typing, with focus checked at every step | `tests/a11y/`, `src/a11y/`, `tests/ui/keyboard.spec.ts` |
 | **Database migrations** | Upgrade tests: seed and snapshot before a release, verify after it (every record, timestamps, dashboard figures, access rules), with expected value rewrites declared up front | `tests/migration/`, `src/migration/` |
 | **CI quality gates** | Types, type-aware ESLint with the Playwright plugin, and Prettier required on every pull request; the full suite nightly against production; CodeQL | `.github/workflows/` |
 | **Defects to regressions** | A logout defect caught by a `test.fail()` test that flipped to a guard once the fix shipped; three contrast failures tracked as known issues | [Findings](#findings-and-decisions) |
@@ -30,6 +30,7 @@ What testing this application surfaced, and how it shaped the suites.
 | **Logging out ends every session of the account**, not just the current one, with the session cookie or a bearer token. | The log in and log out tests use a dedicated account, so they can never sign out the session the rest of the suite shares, and the tests on that account run one after the other. Once bearer logout was fixed, a parallel run let the logout test end the token another test was still using: that test had only passed because of the defect. |
 | **Three color contrast failures (WCAG 2.2 AA, 1.4.3).** The current page in the sidebar (3.74:1), the date line on Home (4.36:1) and the High priority badge in the landing page preview (4.22:1) are below 4.5:1. | Found by the accessibility scans, which list them as known issues: they are reported on every run, anything new fails the scan, and a known issue that stops reproducing fails too. Scanning before animations finish reports around 30 false contrast failures on Home, so the scans wait for animations to finish. |
 | **Two releases changed the database**: a table rename that moved the API to new paths, and a rewrite of every stored priority value. | Both were checked with the upgrade test before they shipped: seed on the old version, migrate the same database, verify on the new one. The second declared its value rewrite (`P0` to `HIGH` and so on), so verify required exactly that change and nothing else. |
+| **Keys pressed before the page is interactive do nothing.** The Add button needs its script, so an Enter pressed while the page is still loading is lost, and the text typed after it goes nowhere. A first keyboard run looked like the Add dialog closing by itself. | The keyboard helper presses Enter until the dialog opens and never while it is open. Clicks wait for this on their own; key presses do not. |
 | **Sign-in is rate limited per IP.** | The suite signs in once and reuses the session. Only the log in, log out, isolation and contract provider tests sign in on their own, so a full run stays well inside the limit. |
 
 Design decisions:
@@ -41,14 +42,14 @@ Design decisions:
 
 ## Status
 
-**In place:** UI smoke suite, API suite with response schemas, cross-user isolation, Pact contracts, WCAG scans, database upgrade tests, pull request checks, and the nightly run against production.
+**In place:** UI smoke suite, keyboard-only flows, API suite with response schemas, cross-user isolation, Pact contracts, WCAG scans, database upgrade tests, pull request checks, and the nightly run against production.
 
 **Planned** (not implemented yet):
 
 - **UI flows beyond the smoke suite**: editing, stage changes, search, filters, sorting and pagination through the UI.
 - **Performance testing** with k6: load and stress profiles for the list, detail and dashboard endpoints.
 - **Visual regression**: screenshot comparison for key pages and states.
-- **Keyboard and screen reader flows**, beyond what the automated WCAG rules cover.
+- **Screen reader flows**, beyond what the automated WCAG rules and the keyboard flows cover.
 - **Security edge cases**: auth edge cases such as session expiry, and input handling.
 - **AI evaluations**: evaluation harnesses for the AI features planned for the application.
 
@@ -110,6 +111,7 @@ src/
   a11y/                 axe scan helper and the known accessibility issues
   migration/            upgrade-test dataset and account snapshots
   fixtures/test.ts      test.extend: page objects and API clients as fixtures
+  support/keyboard.ts   Tab-to-control and focus helpers for keyboard-only flows
 tests/
   setup/                signs in once and saves the session
   api/                  API specs, no browser
@@ -205,7 +207,7 @@ Consumer-driven contract tests for the applications API, using Pact specificatio
 - Every violation, with the failing elements, is attached to the HTML report as `axe-violations.json`.
 - Known issues (`src/a11y/known-issues.ts`) are matched by rule and the element's visible text, not by CSS classes, and show up as annotations on the test. A new violation fails the scan, and so does a known issue that no longer reproduces.
 
-Automated rules cover only part of WCAG. Keyboard and screen reader flows are coming next.
+Automated rules cover only part of WCAG, so `tests/ui/keyboard.spec.ts` runs the main flows with the keyboard only: add an application, close the Add dialog with Escape, open a card with Enter and Space, move an application to another stage, and sort the list. Each step checks where focus is: inside a dialog when it opens, back on the control that opened it when it closes. Controls are reached with Tab, so one that drops out of the tab order fails the flow. Screen reader flows come next.
 
 ## Database migration tests
 

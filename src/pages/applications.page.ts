@@ -36,8 +36,33 @@ export class ApplicationsPage extends BasePage {
     return this.board.getByRole("button", { name: new RegExp(`^Open ${escapeRegExp(company)}\\b`) });
   }
 
+  /** Column header in the list view. Sortable headers hold a button with the column name. */
+  columnHeader(name: string): Locator {
+    return this.table.getByRole("columnheader", { name: new RegExp(`^${escapeRegExp(name)}`) });
+  }
+
+  sortButton(column: string): Locator {
+    return this.columnHeader(column).getByRole("button");
+  }
+
   async openAddDialog(): Promise<AddApplicationDialog> {
     await this.addButton.click();
+    return this.addDialog;
+  }
+
+  /**
+   * Opens the Add dialog with Enter on the focused Add button. Keys pressed before the page
+   * is interactive do nothing (the button needs its script), so this presses again until
+   * the dialog opens, and never presses while it is open.
+   */
+  async openAddDialogWithKeyboard(): Promise<AddApplicationDialog> {
+    await expect(async () => {
+      if (!(await this.addDialog.root.isVisible())) {
+        await this.addButton.focus();
+        await this.page.keyboard.press("Enter");
+      }
+      await expect(this.addDialog.root).toBeVisible({ timeout: 1_000 });
+    }).toPass();
     return this.addDialog;
   }
 
