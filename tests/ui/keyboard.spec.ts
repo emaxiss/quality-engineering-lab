@@ -9,9 +9,8 @@ test.describe("keyboard only", () => {
     await applicationsPage.goto();
 
     const dialog = await applicationsPage.openAddDialogWithKeyboard();
-    expect(await hasFocusWithin(dialog.root), "focus moves into the dialog").toBe(true);
+    await expect(dialog.companyInput, "the dialog opens on its first field").toBeFocused();
 
-    await tabTo(page, dialog.companyInput);
     await page.keyboard.type(application.company);
     await tabTo(page, dialog.titleInput);
     await page.keyboard.type(application.title);
@@ -24,6 +23,22 @@ test.describe("keyboard only", () => {
     await page.keyboard.press("Escape");
     await expect(applicationsPage.details.root).toBeHidden();
     await expect(applicationsPage.stage("Saved")).toContainText(application.company);
+  });
+
+  test("the first Tab reaches the skip link, which moves focus past the navigation", async ({
+    page,
+    applicationsPage,
+    appShell,
+  }) => {
+    await applicationsPage.goto();
+
+    await page.keyboard.press("Tab");
+    await expect(appShell.skipLink).toBeFocused();
+    await expect(appShell.skipLink).toBeInViewport();
+
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Tab");
+    await expect(applicationsPage.addButton, "the next Tab lands on the page's first control").toBeFocused();
   });
 
   test("Escape closes the Add dialog and returns focus to the Add button", async ({ page, applicationsPage }) => {
