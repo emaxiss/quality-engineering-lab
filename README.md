@@ -18,7 +18,7 @@ Playwright and TypeScript test suites for a live SaaS web application, a job app
 | **Accessibility** | axe scans against WCAG 2.2 AA, with a known-issue list that fails when an issue is fixed, so the list cannot go stale; keyboard-only flows: adding, opening, moving and sorting applications with Tab, Enter, Space, Escape and typing, with focus checked at every step | `tests/a11y/`, `src/a11y/`, `tests/ui/keyboard.spec.ts` |
 | **Database migrations** | Upgrade tests: seed and snapshot before a release, verify after it (every record, timestamps, dashboard figures, access rules), with expected value rewrites declared up front | `tests/migration/`, `src/migration/` |
 | **CI quality gates** | Types, type-aware ESLint with the Playwright plugin, and Prettier required on every pull request; the full suite nightly against production; CodeQL | `.github/workflows/` |
-| **Defects to regressions** | A logout defect caught by a `test.fail()` test that flipped to a guard once the fix shipped; three contrast failures tracked as known issues | [Findings](#findings-and-decisions) |
+| **Defects to regressions** | A logout defect caught by a `test.fail()` test that flipped to a guard once the fix shipped; three contrast failures tracked as known issues until they were fixed | [Findings](#findings-and-decisions) |
 
 ## Findings and decisions
 
@@ -28,7 +28,7 @@ What testing this application surfaced, and how it shaped the suites.
 | --- | --- |
 | **Logging out with a bearer token did not end the session (fixed).** `POST /api/v1/auth/logout` answered 204, but the token kept authorizing requests until it expired, about an hour later. Logging out with the session cookie did end the session. | Found by `tests/api/auth.spec.ts`, which asserted the correct behavior under a `test.fail()` marker. When the fix shipped, the marked test passed, the run reported "expected to fail, but passed", and the marker was removed. The test now guards against the defect coming back. |
 | **Logging out ends every session of the account**, not just the current one, with the session cookie or a bearer token. | The log in and log out tests use a dedicated account, so they can never sign out the session the rest of the suite shares, and the tests on that account run one after the other. Once bearer logout was fixed, a parallel run let the logout test end the token another test was still using: that test had only passed because of the defect. |
-| **Three color contrast failures (WCAG 2.2 AA, 1.4.3).** The current page in the sidebar (3.74:1), the date line on Home (4.36:1) and the High priority badge in the landing page preview (4.22:1) are below 4.5:1. | Found by the accessibility scans, which list them as known issues: they are reported on every run, anything new fails the scan, and a known issue that stops reproducing fails too. Scanning before animations finish reports around 30 false contrast failures on Home, so the scans wait for animations to finish. |
+| **Three color contrast failures (WCAG 2.2 AA, 1.4.3), fixed.** The current page in the sidebar (3.74:1), the date line on Home (4.36:1) and the High priority badge (4.22:1) were below 4.5:1. The badge failed on every High priority card and list row too, which the scans missed while the test account held no High priority records. | Found by the accessibility scans and listed as known issues: reported on every run, anything new failed the scan, and a known issue that stopped reproducing failed it too. The board and list scans now create a High priority record, so the badge is always checked. When the fix shipped, the entries were removed and the scans run with none. Scanning before animations finish reports around 30 false contrast failures on Home, so the scans wait for animations to finish. |
 | **Two releases changed the database**: a table rename that moved the API to new paths, and a rewrite of every stored priority value. | Both were checked with the upgrade test before they shipped: seed on the old version, migrate the same database, verify on the new one. The second declared its value rewrite (`P0` to `HIGH` and so on), so verify required exactly that change and nothing else. |
 | **Keys pressed before the page is interactive do nothing.** The Add button needs its script, so an Enter pressed while the page is still loading is lost, and the text typed after it goes nowhere. A first keyboard run looked like the Add dialog closing by itself. | The keyboard helper presses Enter until the dialog opens and never while it is open. Clicks wait for this on their own; key presses do not. |
 | **Sign-in is rate limited per IP.** | The suite signs in once and reuses the session. Only the log in, log out, isolation and contract provider tests sign in on their own, so a full run stays well inside the limit. |
@@ -158,7 +158,7 @@ Happy paths only. Negative and edge cases come later.
 | Spec | Covers |
 | --- | --- |
 | `api/health.spec.ts` | Health endpoint reports the service and database as ok |
-| `ui/public.spec.ts` | Landing page, link to the login form |
+| `ui/public.spec.ts` | Landing page, links to the login form and the privacy page |
 | `ui/auth.spec.ts` | Log in, log out |
 | `ui/navigation.spec.ts` | Home loads, primary navigation reaches every section |
 | `ui/applications.spec.ts` | Board and list views, add an application, open its details |
@@ -201,7 +201,7 @@ Consumer-driven contract tests for the applications API, using Pact specificatio
 
 ## Accessibility
 
-`tests/a11y/pages.spec.ts` scans the landing and login pages signed out, and Home, the applications board and list, the add application dialog and settings signed in, with [axe](https://github.com/dequelabs/axe-core) against WCAG 2.2 A and AA.
+`tests/a11y/pages.spec.ts` scans the landing, login and privacy pages signed out, and Home, the applications board and list, the add application dialog and settings signed in, with [axe](https://github.com/dequelabs/axe-core) against WCAG 2.2 A and AA.
 
 - Scans wait for running animations to finish, so colors are measured as the user sees them once the page settles.
 - Every violation, with the failing elements, is attached to the HTML report as `axe-violations.json`.

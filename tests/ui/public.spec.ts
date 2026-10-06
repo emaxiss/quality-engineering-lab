@@ -18,4 +18,18 @@ test.describe("public pages", { tag: "@smoke" }, () => {
     await expect(loginPage.emailInput).toBeVisible();
     await expect(loginPage.passwordInput).toBeVisible();
   });
+
+  test("landing page links to the privacy page", async ({ landingPage, privacyPage }) => {
+    await landingPage.goto();
+    await landingPage.privacyLink.click();
+
+    await privacyPage.expectLoaded();
+    await expect(privacyPage.sections).toHaveText([
+      "What is stored",
+      "What is not",
+      "Where it lives",
+      "Export and delete",
+      "Email",
+    ]);
+  });
 });
