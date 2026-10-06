@@ -14,11 +14,12 @@ Playwright and TypeScript test suites for a live SaaS web application, a job app
 | **API automation** | Endpoint clients that return raw responses, so status codes and error envelopes are part of every check; validation errors, pagination, filters, sorting | `src/api/`, `tests/api/` |
 | **Response schemas** | A strict Zod schema for every response body: a field that appears, disappears or changes type fails the test. The TypeScript types are inferred from the same schemas | `src/api/schemas.ts` |
 | **Authorization** | A second account tries to read, search for, export, update and delete another account's record: every attempt must answer 404 and leave the owner's copy unchanged | `tests/api/isolation.spec.ts` |
+| **Security** | OWASP Top 10 checks through the API and the browser: mass assignment, forged and malformed tokens, malformed bodies, CSV formula injection in the export, cross-site writes, session cookie flags, security headers, and an open redirect after login | `tests/api/security.spec.ts`, `tests/api/auth.spec.ts`, `tests/ui/auth.spec.ts` |
 | **Contract testing** | Pact v4: a consumer client writes the contract, and provider verification replays it against the live API with state handlers | `tests/contract/` |
 | **Accessibility** | axe scans against WCAG 2.2 AA, with a known-issue list that fails when an issue is fixed, so the list cannot go stale; keyboard-only flows: adding, opening, moving and sorting applications with Tab, Enter, Space, Escape and typing, with focus checked at every step | `tests/a11y/`, `src/a11y/`, `tests/ui/keyboard.spec.ts` |
 | **Database migrations** | Upgrade tests: seed and snapshot before a release, verify after it (every record, timestamps, dashboard figures, access rules), with expected value rewrites declared up front | `tests/migration/`, `src/migration/` |
 | **CI quality gates** | Types, type-aware ESLint with the Playwright plugin, and Prettier required on every pull request; the full suite nightly against production; CodeQL | `.github/workflows/` |
-| **Defects to regressions** | A logout defect caught by a `test.fail()` test that flipped to a guard once the fix shipped; three contrast failures tracked as known issues until they were fixed | [Findings](#findings-and-decisions) |
+| **Defects to regressions** | A logout defect caught by a `test.fail()` test that flipped to a guard once the fix shipped; three contrast failures tracked as known issues until they were fixed; three open security defects tracked the same way | [Findings](#findings-and-decisions) |
 
 ## Findings and decisions
 
@@ -31,6 +32,10 @@ What testing this application surfaced, and how it shaped the suites.
 | **Three color contrast failures (WCAG 2.2 AA, 1.4.3), fixed.** The current page in the sidebar (3.74:1), the date line on Home (4.36:1) and the High priority badge (4.22:1) were below 4.5:1. The badge failed on every High priority card and list row too, which the scans missed while the test account held no High priority records. | Found by the accessibility scans and listed as known issues: reported on every run, anything new failed the scan, and a known issue that stopped reproducing failed it too. The board and list scans now create a High priority record, so the badge is always checked. When the fix shipped, the entries were removed and the scans run with none. Scanning before animations finish reports around 30 false contrast failures on Home, so the scans wait for animations to finish. |
 | **Two releases changed the database**: a table rename that moved the API to new paths, and a rewrite of every stored priority value. | Both were checked with the upgrade test before they shipped: seed on the old version, migrate the same database, verify on the new one. The second declared its value rewrite (`P0` to `HIGH` and so on), so verify required exactly that change and nothing else. |
 | **Keys pressed before the page is interactive do nothing.** The Add button needs its script, so an Enter pressed while the page is still loading is lost, and the text typed after it goes nowhere. A first keyboard run looked like the Add dialog closing by itself. | The keyboard helper presses Enter until the dialog opens and never while it is open. Clicks wait for this on their own; key presses do not. |
+| **Open redirect after login (open, OWASP A01).** The login page sends you to its `next` parameter after you sign in. It refuses `//other.site` and `/\other.site`, but browsers remove tabs and line breaks from URLs, so `/login?next=%2F%09%2Fexample.com` (a tab between the slashes) signs you in and then opens example.com. A genuine login link for the application can deliver the user to a page that only looks like it. | `tests/ui/auth.spec.ts` signs in through that link and asserts the user stays on the application, marked `test.fail()` until the fix ships. |
+| **The session cookie is readable by page scripts and has no Secure flag (open, OWASP A05).** It is `SameSite=Lax` and lasts 400 days, but has no `HttpOnly` or `Secure`. A script injected into the page could read the session. | `tests/api/auth.spec.ts` checks the cookie attributes on login, marked `test.fail()`. |
+| **Cookie-signed writes are not checked for origin (open, defense in depth).** A write sent with the session cookie and `Origin: https://attacker.example` creates a record, also with a `text/plain` body, which a cross-site form can send. Browsers do not attach a `SameSite=Lax` cookie to such requests, so this is not exploitable today; an origin check would keep it that way if the cookie policy ever changed. | `tests/api/security.spec.ts`, marked `test.fail()`. |
+| **Forged tokens are refused at two layers.** The API answers 401 to a changed signature, claims for another user under the real signature, an empty or malformed bearer, and other schemes. On production, the hosting firewall drops an unsigned (`alg: none`) token with a 403 before it reaches the API. | The token test accepts 401 or 403 and fails only if a forged token is ever authorized. |
 | **Sign-in is rate limited per IP.** | The suite signs in once and reuses the session. Only the log in, log out, isolation and contract provider tests sign in on their own, so a full run stays well inside the limit. |
 
 Design decisions:
@@ -42,7 +47,7 @@ Design decisions:
 
 ## Status
 
-**In place:** UI smoke suite, keyboard-only flows, API suite with response schemas, cross-user isolation, Pact contracts, WCAG scans, database upgrade tests, pull request checks, and the nightly run against production.
+**In place:** UI smoke suite, keyboard-only flows, API suite with response schemas, security checks, cross-user isolation, Pact contracts, WCAG scans, database upgrade tests, pull request checks, and the nightly run against production.
 
 **Planned** (not implemented yet):
 
@@ -50,7 +55,7 @@ Design decisions:
 - **Performance testing** with k6: load and stress profiles for the list, detail and dashboard endpoints.
 - **Visual regression**: screenshot comparison for key pages and states.
 - **Screen reader flows**, beyond what the automated WCAG rules and the keyboard flows cover.
-- **Security edge cases**: auth edge cases such as session expiry, and input handling.
+- **More security cases**: session expiry and refresh, stored script injection through the UI, and request rate limits.
 - **AI evaluations**: evaluation harnesses for the AI features planned for the application.
 
 ## CI
@@ -147,7 +152,7 @@ tests/
 | `contract-provider` | `tests/contract/provider/` | Depends on `contract-consumer`. Signs in once |
 | `migration-seed`, `migration-verify` | `tests/migration/` | Only with `MIGRATION` set, through the migration scripts. Depend on `setup` |
 
-Sign-in is rate limited per IP, so a full run signs in six times: `setup` once, `auth-api` twice, `auth` once, `isolation-api` once, `contract-provider` once.
+Sign-in is rate limited per IP, so a full run signs in eight times: `setup` once, `auth-api` three times, `auth` twice, `isolation-api` once, `contract-provider` once.
 
 Traces are kept on first retry, and screenshots and videos only for failures. Locale is `en-US` and the time zone `UTC`. Setting `CI` turns on retries, `forbidOnly`, and the GitHub and JUnit reporters.
 
@@ -167,19 +172,24 @@ Happy paths only. Negative and edge cases come later.
 
 | Spec | Covers |
 | --- | --- |
-| `api/auth.spec.ts` | Login returns a bearer token that authorizes requests; logout with that token ends the session |
+| `api/auth.spec.ts` | Login returns a bearer token that authorizes requests and the same token altered is refused; the session cookie flags; logout with that token ends the session |
 | `api/account.spec.ts` | Signed-in account, 401 without a session, JSON and CSV export |
 | `api/isolation.spec.ts` | A second account cannot read, search for, export, update or delete another account's application: every attempt answers 404, and the owner's copy stays unchanged |
 | `api/dashboard.spec.ts` | Summary counts an application in its stage, source and due follow-ups; 401 without a session |
 | `api/applications.spec.ts` | Create with defaults, read, partial update, applied and closed dates on stage changes, delete |
 | `api/applications-list.spec.ts` | Search with pagination meta, stage filter, sort, empty page past the end |
+| `api/security.spec.ts` | Server-owned fields refused on create and update, a prototype pollution payload, malformed and oversized bodies, forged and malformed bearer tokens, CSV formula injection, cross-site cookie writes, security headers and HSTS |
 | `api/applications-errors.spec.ts` | Validation errors with field paths, malformed and unknown ids, 401 on every call without a session |
 
 ### Known issues
 
 Tests for known defects assert the correct behavior and are marked `test.fail()`, so the suite stays green while the defect exists and turns red once it is fixed, as a reminder to remove the marker.
 
-None open.
+| Defect | Test |
+| --- | --- |
+| Open redirect after login through a tab or line break in `next` | `ui/auth.spec.ts`, "next cannot point to another site" |
+| Session cookie without `HttpOnly` and `Secure` | `api/auth.spec.ts`, "the session cookie is out of reach of page scripts and plain HTTP" |
+| No origin check on cookie-signed writes | `api/security.spec.ts`, "cookie-signed writes from another site are refused" |
 
 ## Contract tests (Pact)
 
