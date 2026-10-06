@@ -21,6 +21,11 @@ async function tokenContext(
   return playwright.request.newContext({ baseURL, extraHTTPHeaders: bearer(session.session.accessToken) });
 }
 
+/** Cookie attributes a session cookie needs. Secure only applies over HTTPS. */
+function requiredCookieAttributes(baseURL: string | undefined): string[] {
+  return baseURL?.startsWith("https:") ? ["httponly", "secure", "samesite=lax"] : ["httponly", "samesite=lax"];
+}
+
 test.describe("auth api", () => {
   // Both tests sign in to the same account, and logging out ends every session of it, including
   // the other test's token. Run them one after the other, never in parallel.
@@ -37,6 +42,39 @@ test.describe("auth api", () => {
       expect(account.data.email).toBe(env.loginUserEmail);
     } finally {
       await tokenOnly.dispose();
+    }
+
+    // The same token, altered: a changed signature, or claims for another user under the real signature.
+    const [header, payload, signature] = session.session.accessToken.split(".");
+    const claims = JSON.parse(Buffer.from(payload ?? "", "base64url").toString()) as Record<string, unknown>;
+    const otherUser = Buffer.from(JSON.stringify({ ...claims, sub: "00000000-0000-4000-8000-000000000000" }));
+    const forged = {
+      "changed signature": `${header}.${payload}.${signature?.slice(0, -4)}AAAA`,
+      "changed subject": `${header}.${otherUser.toString("base64url")}.${signature}`,
+    };
+    for (const [label, token] of Object.entries(forged)) {
+      const context = await playwright.request.newContext({ baseURL, extraHTTPHeaders: bearer(token) });
+      try {
+        await test.step(label, async () => {
+          await expectApiError(await new AccountEndpoint(context).get(), 401, "UNAUTHORIZED");
+        });
+      } finally {
+        await context.dispose();
+      }
+    }
+  });
+
+  test("the session cookie is out of reach of page scripts and plain HTTP", async ({ request, baseURL }) => {
+    test.fail(true, "Known issue: the session cookie is set without HttpOnly and Secure");
+
+    const response = await new AuthEndpoint(request).login(env.loginUserEmail, env.loginUserPassword);
+    expect(response.status()).toBe(200);
+    const cookies = response.headersArray().filter((header) => header.name.toLowerCase() === "set-cookie");
+    expect(cookies.length, "the login sets a session cookie").toBeGreaterThan(0);
+
+    for (const { value } of cookies) {
+      const attributes = value.split(";").map((part) => part.trim().toLowerCase());
+      expect(attributes, value.split("=")[0]).toEqual(expect.arrayContaining(requiredCookieAttributes(baseURL)));
     }
   });
 
