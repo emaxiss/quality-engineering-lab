@@ -9,11 +9,13 @@ import { ApplicationsPage } from "@/pages/applications.page";
 import { HomePage } from "@/pages/home.page";
 import { LandingPage } from "@/pages/landing.page";
 import { LoginPage } from "@/pages/login.page";
+import { PrivacyPage } from "@/pages/privacy.page";
 import { SettingsPage } from "@/pages/settings.page";
 
 interface Fixtures {
   landingPage: LandingPage;
   loginPage: LoginPage;
+  privacyPage: PrivacyPage;
   homePage: HomePage;
   applicationsPage: ApplicationsPage;
   settingsPage: SettingsPage;
@@ -28,6 +30,7 @@ interface Fixtures {
 export const test = base.extend<Fixtures>({
   landingPage: async ({ page }, use) => use(new LandingPage(page)),
   loginPage: async ({ page }, use) => use(new LoginPage(page)),
+  privacyPage: async ({ page }, use) => use(new PrivacyPage(page)),
   homePage: async ({ page }, use) => use(new HomePage(page)),
   applicationsPage: async ({ page }, use) => use(new ApplicationsPage(page)),
   settingsPage: async ({ page }, use) => use(new SettingsPage(page)),
