@@ -65,16 +65,16 @@ test.describe("auth api", () => {
   });
 
   test("the session cookie is out of reach of page scripts and plain HTTP", async ({ request, baseURL }) => {
-    test.fail(true, "Known issue: the session cookie is set without HttpOnly and Secure");
-
     const response = await new AuthEndpoint(request).login(env.loginUserEmail, env.loginUserPassword);
     expect(response.status()).toBe(200);
     const cookies = response.headersArray().filter((header) => header.name.toLowerCase() === "set-cookie");
     expect(cookies.length, "the login sets a session cookie").toBeGreaterThan(0);
 
     for (const { value } of cookies) {
-      const attributes = value.split(";").map((part) => part.trim().toLowerCase());
-      expect(attributes, value.split("=")[0]).toEqual(expect.arrayContaining(requiredCookieAttributes(baseURL)));
+      // Only the name and the attributes: the value is a live session and must never reach a log.
+      const [nameAndValue = "", ...attributes] = value.split(";").map((part) => part.trim().toLowerCase());
+      const name = nameAndValue.split("=")[0];
+      expect(attributes, name).toEqual(expect.arrayContaining(requiredCookieAttributes(baseURL)));
     }
   });
 

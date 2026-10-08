@@ -126,8 +126,6 @@ test.describe("security, applications api", () => {
     userRequest,
     applicationsApi,
   }) => {
-    test.fail(true, "Known issue: the API accepts cookie-signed writes whatever the Origin header says");
-
     const response = await userRequest.post(env.applicationsApiPath, {
       headers: { origin: "https://attacker.example", "content-type": "text/plain" },
       data: JSON.stringify(buildApplication()),
