@@ -17,6 +17,7 @@ src/
   migration/            upgrade-test dataset and account snapshots
   fixtures/test.ts      test.extend: page objects and API clients as fixtures
   support/keyboard.ts   Tab-to-control and focus helpers for keyboard-only flows
+  support/csv.ts        RFC 4180 CSV parser for the export checks
 tests/
   setup/                signs in once and saves the session
   api/                  API specs, no browser
@@ -26,6 +27,10 @@ tests/
   migration/            seed and verify phases of an upgrade test
   ui/                   browser specs
   a11y/                 accessibility scans
+perf/
+  lib/                  k6 config, sign-in, seeding, cleanup and user journeys
+  smoke.ts              light load, safe against production
+  load.ts               ramped reads and writes, local or CI builds only
 ```
 
 - **Page objects** expose locators and user actions. Each defines `expectLoaded()`, the one assertion it owns; every other assertion lives in the spec.
