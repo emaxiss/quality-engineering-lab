@@ -33,6 +33,7 @@ More in [Findings and decisions](docs/findings.md).
 | **Security** | OWASP Top 10 checks: mass assignment, forged tokens, CSV formula injection, cross-site writes, cookie flags, security headers, open redirect | `tests/api/security.spec.ts` |
 | **Contract testing** | Pact v4 consumer contract, verified against the live API with state handlers | `tests/contract/` |
 | **Accessibility** | axe scans against WCAG 2.2 AA with a known-issue list that cannot go stale, plus keyboard-only flows | `tests/a11y/`, `tests/ui/keyboard.spec.ts` |
+| **Performance** | k6 profiles in TypeScript: a smoke run against production every night with per-endpoint thresholds, and a load profile for non-production deployments that refuses production | `perf/`, [docs](docs/performance.md) |
 | **Database migrations** | Seed and snapshot before a release, verify every record after it | `tests/migration/` |
 | **CI quality gates** | Types, type-aware ESLint and Prettier on every pull request, the full suite nightly against production, CodeQL | `.github/workflows/` |
 
@@ -48,9 +49,9 @@ Nightly run of 2026-10-07 against production. Every test creates uniquely named 
 
 ## Status
 
-**In place:** UI smoke suite, keyboard-only flows, API suite with response schemas, security checks, cross-user isolation, Pact contracts, WCAG scans, database upgrade tests, pull request checks, and the nightly run against production.
+**In place:** UI smoke suite, keyboard-only flows, API suite with response schemas, security checks, cross-user isolation, Pact contracts, k6 performance smoke, WCAG scans, database upgrade tests, pull request checks, and the nightly run against production.
 
-**Planned:** UI flows beyond the smoke suite, k6 performance tests, visual regression, screen reader flows, and more security cases (session expiry, stored script injection, rate limits).
+**Planned:** UI flows beyond the smoke suite, visual regression, screen reader flows, and more security cases (session expiry, stored script injection, rate limits).
 
 ## Quick start
 
@@ -69,4 +70,5 @@ pnpm test
 - [Architecture](docs/architecture.md): folders, page objects, fixtures, Playwright projects
 - [Test suites](docs/suites.md): smoke, API, contract and accessibility coverage
 - [Database migration tests](docs/migrations.md): how an upgrade test works and how to run one
+- [Performance tests](docs/performance.md): k6 profiles, thresholds and results
 - [Findings and decisions](docs/findings.md): what testing this application surfaced

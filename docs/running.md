@@ -30,6 +30,8 @@ cp .env.example .env         # then fill in both accounts
 | `pnpm lint` | ESLint with type-aware TypeScript rules and the Playwright plugin (missing `await`, focused tests, tests without assertions) |
 | `pnpm format` / `pnpm format:check` | Prettier |
 | `pnpm check` | Types, lint and format together. CI runs it on every pull request |
+| `pnpm perf:smoke` | k6 smoke profile against `BASE_URL`, safe for production. Needs [k6](https://grafana.com/docs/k6/latest/set-up/install-k6/) |
+| `pnpm perf:load` | k6 load profile; refuses to run against production |
 
 
 ## CI
@@ -37,7 +39,7 @@ cp .env.example .env         # then fill in both accounts
 | Workflow | When | What |
 | --- | --- | --- |
 | `checks.yml` | Every pull request and push to `main` | `pnpm check` (types, lint, format) and a dry `playwright test --list`. Required to merge into `main` |
-| `nightly.yml` | Daily at 06:00 UTC, and on demand | The full suite against the live application, with the two test accounts from repository secrets. No report artifacts: traces record typed input, and artifacts of a public repository can be downloaded by anyone |
+| `nightly.yml` | Daily at 06:00 UTC, and on demand | The full suite against the live application, with the two test accounts from repository secrets, then the k6 smoke profile (k6 downloaded from its GitHub release and checked against a pinned SHA-256). No report artifacts: traces record typed input, and artifacts of a public repository can be downloaded by anyone |
 
 CodeQL scans every pull request, and Dependabot watches the dependencies. The application's own pull request pipeline also runs these suites against a local build, including the upgrade test on every pull request that adds a migration.
 

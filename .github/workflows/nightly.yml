@@ -37,3 +37,16 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test
+      - name: Install k6 (pinned release, checksum verified)
+        if: ${{ !cancelled() }}
+        env:
+          K6_VERSION: v2.3.0
+          K6_SHA256: 39c3117b6af817592dcd0ce4242105c0a7af10948c2a425306f0be8f7a8a8ab1
+        run: |
+          curl -fsSL -o k6.tar.gz "https://github.com/grafana/k6/releases/download/${K6_VERSION}/k6-${K6_VERSION}-linux-amd64.tar.gz"
+          echo "${K6_SHA256}  k6.tar.gz" | sha256sum -c -
+          sudo tar -xzf k6.tar.gz --strip-components=1 -C /usr/local/bin "k6-${K6_VERSION}-linux-amd64/k6"
+          k6 version
+      - name: Performance smoke (k6)
+        if: ${{ !cancelled() }}
+        run: k6 run perf/smoke.ts
