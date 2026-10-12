@@ -27,15 +27,28 @@ async function elementText(page: Page, target: unknown[]): Promise<string> {
 
 // Content that fades or slides in is measured mid-animation otherwise, which reports
 // contrast failures for colors the user never sees once the page settles.
+/**
+ * Waits until no finite animation has run for a short quiet period. One check is not enough:
+ * content that renders when its data arrives starts its own fade-in after the first wait, and a
+ * scan during a fade-in measures half-transparent text as a contrast failure.
+ */
 async function waitForAnimations(page: Page): Promise<void> {
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
-        .map((animation) => animation.finished.catch(() => undefined)),
-    ),
-  );
+  await page.evaluate(async () => {
+    const running = () =>
+      document.getAnimations().filter((animation) => {
+        return animation.playState === "running" && animation.effect?.getTiming().iterations !== Infinity;
+      });
+    const deadline = Date.now() + 5_000;
+    let quietSince = Date.now();
+    while (Date.now() < deadline && Date.now() - quietSince < 300) {
+      const active = running();
+      if (active.length > 0) {
+        await Promise.all(active.map((animation) => animation.finished.catch(() => undefined)));
+        quietSince = Date.now();
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  });
 }
 
 /**

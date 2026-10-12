@@ -45,7 +45,8 @@ export function edit(data: RunData): void {
   group("edit", () => {
     const created = http.post(
       `${BASE_URL}${APPLICATIONS_PATH}`,
-      JSON.stringify({ company: `${data.marker} edit ${__VU}-${__ITER}`, title: "Performance Engineer" }),
+      // Not the run marker: browsing searches for exactly the seeded records. Still "Perf Co", for cleanup.
+      JSON.stringify({ company: `Perf Co edit ${__VU}-${__ITER}`, title: "Performance Engineer" }),
       { ...auth, tags: { name: "create" } },
     );
     if (!check(created, { "create answers 201": (r) => r.status === 201 })) return;

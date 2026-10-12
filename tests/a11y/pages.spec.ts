@@ -48,6 +48,7 @@ test.describe("accessibility, signed in", () => {
 
   test("settings", async ({ page, settingsPage }, testInfo) => {
     await settingsPage.goto();
+    await settingsPage.emailInput.waitFor();
     await expectAccessible(page, testInfo);
   });
 });
