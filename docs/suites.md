@@ -12,6 +12,16 @@ Happy paths only. Negative and edge cases are in the API suite below.
 | `ui/navigation.spec.ts` | Home loads, primary navigation reaches every section |
 | `ui/applications.spec.ts` | Board and list views, add an application, open its details |
 
+## UI flows
+
+Full user journeys beyond the happy paths, each on its own records. Every flow checks what the user sees and, where it matters, what reached the API.
+
+| Spec | Covers |
+| --- | --- |
+| `ui/application-lifecycle.spec.ts` | Edit details, record that you applied, archive and reopen from Closed, delete after confirming. The Add form names missing fields and sends nothing; closing it with unsaved input asks first. Markup in a title or notes is shown as text and never runs (stored XSS) |
+| `ui/find-applications.spec.ts` | Search narrows the board, lives in the URL and survives a reload; the priority filter combines with search; a link opens an application's details, and a link to a missing one says so |
+| `ui/settings.spec.ts` | A new display name is saved and Home greets the user by it (restored afterwards); display name and password rules are enforced before anything is sent; Download JSON and Download CSV contain the user's applications |
+
 ## API suite
 
 | Spec | Covers |

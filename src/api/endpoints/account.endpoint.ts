@@ -9,6 +9,10 @@ export class AccountEndpoint {
     return this.request.get("/api/v1/account");
   }
 
+  update(changes: { displayName: string | null }): Promise<APIResponse> {
+    return this.request.patch("/api/v1/account", { data: changes });
+  }
+
   export(format: ExportFormat): Promise<APIResponse> {
     return this.request.get("/api/v1/account/export", { params: { format } });
   }

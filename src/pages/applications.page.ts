@@ -14,6 +14,10 @@ export class ApplicationsPage extends BasePage {
   readonly addButton = this.page.getByRole("main").getByRole("button", { name: "Add application", exact: true });
   readonly board = this.page.getByRole("region", { name: "Application stages" });
   readonly table = this.page.getByRole("region", { name: "Applications table" });
+  readonly searchInput = this.page.getByRole("searchbox", { name: "Search applications" });
+  readonly clearSearchButton = this.page.getByRole("button", { name: "Clear search" });
+  readonly priorityFilter = this.page.getByRole("main").getByRole("combobox", { name: "Priority" });
+  readonly closedButton = this.page.getByRole("button", { name: /^Closed\b/ });
   private readonly viewToggle = this.page.getByRole("group", { name: "Applications view" });
 
   readonly addDialog = new AddApplicationDialog(this.page);
@@ -34,6 +38,21 @@ export class ApplicationsPage extends BasePage {
   /** Board card for a company. Card names start with "Open <company> <title>". */
   card(company: string): Locator {
     return this.board.getByRole("button", { name: new RegExp(`^Open ${escapeRegExp(company)}\\b`) });
+  }
+
+  /** Every card on the board. */
+  get cards(): Locator {
+    return this.board.getByRole("button", { name: /^Open / });
+  }
+
+  /** List view row button for a company. */
+  row(company: string): Locator {
+    return this.table.getByRole("button", { name: company, exact: true });
+  }
+
+  /** Opens an application straight from its link, the way a bookmark or shared URL does. */
+  async gotoApplication(id: string): Promise<void> {
+    await this.page.goto(`${this.path}/${encodeURIComponent(id)}`);
   }
 
   /** Column header in the list view. Sortable headers hold a button with the column name. */
