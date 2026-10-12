@@ -17,7 +17,8 @@
 | Run | list p95 | search p95 | read p95 | Home figures p95 | Failed requests |
 | --- | --- | --- | --- | --- | --- |
 | Smoke, production, 2026-10-09 | 274 ms | 244 ms | 256 ms | 289 ms | 0% |
-| Smoke, non-production deployment | 89 ms | 75 ms | 51 ms | 81 ms | 0% |
-| Load, non-production deployment | 72 ms | 73 ms | 81 ms | 92 ms | **59%**: see below |
+| Smoke, production, 2026-10-11, after the fix below | 173 ms | 148 ms | 148 ms | 140 ms | 0% |
+| Load, non-production deployment, before the fix | 79 ms | 78 ms | 90 ms | 95 ms | **58%** |
+| Load, non-production deployment, after the fix | 37 ms | 27 ms | 15 ms | 23 ms | 0% |
 
-The load profile fails. Response times stay low, but most requests are refused with 401: see [Findings](findings.md), "Valid sessions are refused under load".
+The load profile found that valid sessions were refused under load: fast 401s that sign the user out of the web app. After the application's fix, the same profile passes every threshold and check, and every endpoint is faster, in production too. See [Findings](findings.md).
