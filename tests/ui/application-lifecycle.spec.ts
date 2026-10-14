@@ -152,6 +152,28 @@ test.describe("application lifecycle", () => {
     expect((await response.json()) as { meta: { total: number } }).toMatchObject({ meta: { total: 0 } });
   });
 
+  // Browsers honor a refused close only once per user action, so a second Escape closes a modal
+  // dialog even when the page refuses. Declining "discard" must still keep the draft open.
+  test("declining to discard twice with Escape keeps the form open", async ({ page, applicationsPage }) => {
+    const company = `Draft Co ${randomUUID().slice(0, 8)}`;
+    let declined = 0;
+    page.on("dialog", async (prompt) => {
+      await prompt.dismiss();
+      declined++;
+    });
+
+    await applicationsPage.goto();
+    const dialog = await applicationsPage.openAddDialog();
+    await dialog.companyInput.fill(company);
+    for (let presses = 1; presses <= 2; presses++) {
+      await page.keyboard.press("Escape");
+      await expect.poll(() => declined, "the discard prompt was shown and declined").toBe(presses);
+    }
+
+    await expect(dialog.root).toBeVisible();
+    await expect(dialog.companyInput).toHaveValue(company);
+  });
+
   // Markup typed into any field must come back as text, never run as page code (stored XSS).
   test("markup in a title and in notes is shown as text, not run", async ({
     page,
