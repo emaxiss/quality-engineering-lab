@@ -70,6 +70,20 @@ export default defineConfig({
       dependencies: ["setup"],
       use: { ...devices["Desktop Chrome"], storageState: AUTH_STATE_PATH },
     },
+    // Screenshot comparisons against fixed, fictional data. Baselines are Linux renders, so this
+    // project only exists inside the pinned Playwright image (scripts/visual.sh) and in CI.
+    ...(process.env.VISUAL
+      ? [
+          {
+            name: "visual",
+            testMatch: /visual\/.*\.spec\.ts/,
+            dependencies: ["setup"],
+            snapshotPathTemplate: "{testDir}/{testFileDir}/__screenshots__/{projectName}/{arg}{ext}",
+            expect: { toHaveScreenshot: { maxDiffPixels: 0 } },
+            use: { ...devices["Desktop Chrome"], storageState: AUTH_STATE_PATH },
+          },
+        ]
+      : []),
     // Upgrade tests: seed runs against the version before an upgrade, verify against the one after.
     // Only defined for the migration scripts, so they never join a normal run.
     ...(process.env.MIGRATION

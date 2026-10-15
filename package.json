@@ -16,6 +16,8 @@
     "test:unit": "playwright test --project=unit",
     "test:migration:seed": "MIGRATION=1 playwright test --project=migration-seed",
     "test:migration:verify": "MIGRATION=1 playwright test --project=migration-verify",
+    "test:visual": "scripts/visual.sh",
+    "test:visual:update": "scripts/visual.sh --update-snapshots",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "report": "playwright show-report",
