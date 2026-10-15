@@ -41,6 +41,15 @@ Tests for known defects assert the correct behavior and are marked `test.fail()`
 
 None open.
 
+## Visual regression
+
+`tests/visual/pages.spec.ts` compares 12 screens with committed baselines: the landing, login and privacy pages; Home, the board, the list, an application's details, the Add form and Settings; and Home, the board and details at phone size.
+
+- **Fixed data.** Signed-in pages are served from fictional applications through a stubbed API (`src/visual/`), validated against the same strict schemas as the real API, and the clock is frozen. A screenshot changes only when the interface does. The stub refuses writes.
+- **No real account in an image.** The server renders the signed-in email in the sidebar, which the stub cannot replace, so it is swapped for the fictional account's email before every screenshot.
+- **Exact match.** Any pixel that differs fails. A tolerance of 0.1% let a changed job title through, because a few letters of small text are fewer pixels than that.
+- **One renderer.** Fonts render differently on each operating system, so baselines are made and compared only inside the pinned Playwright Linux image: `pnpm test:visual` locally, and a container job in the nightly. On a failure, the nightly uploads only the expected, actual and difference images.
+
 ## Contract tests (Pact)
 
 Consumer-driven contract tests for the applications API, using Pact specification v4 and no broker.
