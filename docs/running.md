@@ -23,6 +23,7 @@ cp .env.example .env         # then fill in both accounts
 | `pnpm test:cross-browser` | Runs everything in Chromium, Firefox, WebKit and a Pixel 7 viewport |
 | `pnpm test:contract` | Generates the Pact contract, then verifies it against `BASE_URL` |
 | `pnpm test:unit` | Unit tests for helpers, no network |
+| `pnpm test:visual` / `pnpm test:visual:update` | Screenshot comparisons, or new baselines, inside the pinned Playwright Linux image (needs Docker). See [Visual regression](suites.md#visual-regression) |
 | `pnpm test:migration:seed` / `pnpm test:migration:verify` | The two phases of an upgrade test, see [Database migration tests](migrations.md) |
 | `pnpm test:headed` / `pnpm test:ui` | Headed run / Playwright UI mode |
 | `pnpm report` | Opens the last HTML report |

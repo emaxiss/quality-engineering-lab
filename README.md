@@ -49,9 +49,9 @@ Nightly run of 2026-10-07 against production. Every test creates uniquely named 
 
 ## Status
 
-**In place:** UI smoke suite, full UI flows (edit, archive, delete, search, filters, settings, exports), keyboard-only flows, API suite with response schemas, security checks, cross-user isolation, Pact contracts, k6 performance smoke, WCAG scans, database upgrade tests, pull request checks, and the nightly run against production.
+**In place:** UI smoke suite, full UI flows (edit, archive, delete, search, filters, settings, exports), keyboard-only flows, visual regression, API suite with response schemas, security checks, cross-user isolation, Pact contracts, k6 performance smoke, WCAG scans, database upgrade tests, pull request checks, and the nightly run against production.
 
-**Planned:** visual regression, screen reader flows, and more security cases (session expiry, rate limits).
+**Planned:** screen reader flows, and more security cases (session expiry, rate limits).
 
 ## Quick start
 
@@ -68,7 +68,7 @@ pnpm test
 
 - [Running the suites](docs/running.md): environment variables, scripts, CI
 - [Architecture](docs/architecture.md): folders, page objects, fixtures, Playwright projects
-- [Test suites](docs/suites.md): smoke, UI flows, API, contract and accessibility coverage
+- [Test suites](docs/suites.md): smoke, UI flows, visual regression, API, contract and accessibility coverage
 - [Database migration tests](docs/migrations.md): how an upgrade test works and how to run one
 - [Performance tests](docs/performance.md): k6 profiles, thresholds and results
 - [Findings and decisions](docs/findings.md): what testing this application surfaced

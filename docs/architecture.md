@@ -55,6 +55,7 @@ perf/
 | `firefox`, `webkit`, `mobile-chrome` | the rest of `tests/ui/` | Only with `CROSS_BROWSER` set. Depend on `setup` |
 | `contract-consumer` | `tests/contract/consumer/` | No network. Writes `pacts/` (git-ignored) |
 | `contract-provider` | `tests/contract/provider/` | Depends on `contract-consumer`. Signs in once |
+| `visual` | `tests/visual/` | Only with `VISUAL` set, through `scripts/visual.sh` or the nightly's container job. Depends on `setup` |
 | `migration-seed`, `migration-verify` | `tests/migration/` | Only with `MIGRATION` set, through the migration scripts. Depend on `setup` |
 
 Sign-in is rate limited per IP, so a full run signs in eight times: `setup` once, `auth-api` three times, `auth` twice, `isolation-api` once, `contract-provider` once.

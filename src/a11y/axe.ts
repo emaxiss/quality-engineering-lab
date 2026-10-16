@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, type TestInfo } from "@playwright/test";
+import { waitForAnimations } from "@/support/animations";
 
 /** WCAG 2.2 level A and AA, including the rules carried over from 2.0 and 2.1. */
 export const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa"];
@@ -23,32 +24,6 @@ async function elementText(page: Page, target: unknown[]): Promise<string> {
   const [selector] = target;
   if (typeof selector !== "string" || target.length !== 1) return ""; // inside a frame or shadow root
   return ((await page.locator(selector).first().textContent()) ?? "").trim();
-}
-
-// Content that fades or slides in is measured mid-animation otherwise, which reports
-// contrast failures for colors the user never sees once the page settles.
-/**
- * Waits until no finite animation has run for a short quiet period. One check is not enough:
- * content that renders when its data arrives starts its own fade-in after the first wait, and a
- * scan during a fade-in measures half-transparent text as a contrast failure.
- */
-async function waitForAnimations(page: Page): Promise<void> {
-  await page.evaluate(async () => {
-    const running = () =>
-      document.getAnimations().filter((animation) => {
-        return animation.playState === "running" && animation.effect?.getTiming().iterations !== Infinity;
-      });
-    const deadline = Date.now() + 5_000;
-    let quietSince = Date.now();
-    while (Date.now() < deadline && Date.now() - quietSince < 300) {
-      const active = running();
-      if (active.length > 0) {
-        await Promise.all(active.map((animation) => animation.finished.catch(() => undefined)));
-        quietSince = Date.now();
-      }
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-  });
 }
 
 /**
