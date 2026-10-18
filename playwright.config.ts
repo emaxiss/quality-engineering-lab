@@ -6,6 +6,10 @@ import { AUTH_STATE_PATH, env } from "./src/config/env";
 if (existsSync(".env")) process.loadEnvFile(".env");
 
 const isCI = !!process.env.CI;
+const publishReport = !!process.env.PUBLISH_REPORT;
+// Playwright attaches a snapshot of the page to a failed test; on a signed-in page that includes
+// the account's email. A published report leaves it out.
+if (publishReport) process.env.PLAYWRIGHT_NO_COPY_PROMPT = "1";
 
 const authSpec = /ui\/auth\.spec\.ts/;
 const apiAuthSpec = /api\/auth\.spec\.ts/;
@@ -37,9 +41,11 @@ export default defineConfig({
     : [["list"], ["html", { open: "never" }]],
   use: {
     baseURL: env.baseURL,
-    trace: "on-first-retry",
-    screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    // A published report keeps no traces, screenshots or videos: they record typed input and the
+    // signed-in pages. scripts/check-report.mjs checks the result before it goes out.
+    trace: publishReport ? "off" : "on-first-retry",
+    screenshot: publishReport ? "off" : "only-on-failure",
+    video: publishReport ? "off" : "retain-on-failure",
     actionTimeout: 10_000,
     navigationTimeout: 15_000,
     locale: "en-US",
