@@ -1,4 +1,5 @@
 import { expect } from "@playwright/test";
+import { fillSecret } from "@/support/secret-input";
 import { BasePage } from "./base.page";
 
 export class LoginPage extends BasePage {
@@ -10,8 +11,9 @@ export class LoginPage extends BasePage {
   readonly submitButton = this.page.getByRole("button", { name: "Log in" });
 
   async login(email: string, password: string): Promise<void> {
-    await this.emailInput.fill(email);
-    await this.passwordInput.fill(password);
+    // Account details are filled without a value-bearing step: reports are published.
+    await fillSecret(this.emailInput, email);
+    await fillSecret(this.passwordInput, password);
     await this.submitButton.click();
   }
 
