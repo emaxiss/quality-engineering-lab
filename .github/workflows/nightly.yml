@@ -1,9 +1,11 @@
 name: Nightly
 
 # The full suite against the live application, once a day and on demand.
-# No report artifacts: traces record typed input, including the sign-in password, and
-# artifacts of a public repository can be downloaded by anyone. Failures show up as
-# annotations on the run. The one exception is the images of a failed screenshot comparison.
+# The HTML report of the live run is published to GitHub Pages. It is built without traces,
+# screenshots or videos (PUBLISH_REPORT), and scripts/check-report.ts must find no credential or
+# session token in it, or nothing is published. No other report artifacts: traces record typed
+# input, and artifacts of a public repository can be downloaded by anyone. The one exception is
+# the images of a failed screenshot comparison.
 
 on:
   schedule:
@@ -22,7 +24,10 @@ jobs:
     name: Full suite against the live app
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      report: ${{ steps.check.outcome }}
     env:
+      PUBLISH_REPORT: "1"
       E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
       E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
       E2E_LOGIN_USER_EMAIL: ${{ secrets.E2E_LOGIN_USER_EMAIL }}
@@ -37,6 +42,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test
+      - name: Check the report holds no credentials
+        id: check
+        if: ${{ !cancelled() }}
+        run: node scripts/check-report.ts
+      - name: Upload the report for Pages
+        if: ${{ !cancelled() && steps.check.outcome == 'success' }}
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: playwright-report
       - name: Install k6 (pinned release, checksum verified)
         if: ${{ !cancelled() }}
         env:
@@ -81,3 +95,20 @@ jobs:
             test-results/**/*-expected.png
             test-results/**/*-diff.png
           retention-days: 7
+
+  publish:
+    name: Publish the report
+    needs: live
+    # Also after a failed run: that report is the one worth reading. Never without a clean check.
+    if: ${{ !cancelled() && needs.live.outputs.report == 'success' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

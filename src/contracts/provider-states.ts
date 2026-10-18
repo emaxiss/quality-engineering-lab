@@ -1,3 +1,4 @@
+import { bodyForMessage } from "@/api/assertions";
 import type { APIRequestContext } from "@playwright/test";
 import { CONTRACT_COMPANY } from "@/contracts/pact.config";
 
@@ -16,7 +17,7 @@ export class ProviderStates {
       data: { company: CONTRACT_COMPANY, title: "QA Engineer", tags: ["contract"] },
     });
     if (response.status() !== 201) {
-      throw new Error(`State setup failed: ${response.status()} ${await response.text()}`);
+      throw new Error(`State setup failed: ${response.status()} ${await bodyForMessage(response)}`);
     }
     const { data } = (await response.json()) as { data: { id: string } };
     return { id: data.id };

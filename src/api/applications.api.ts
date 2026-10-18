@@ -1,3 +1,4 @@
+import { bodyForMessage } from "@/api/assertions";
 import type { APIRequestContext } from "@playwright/test";
 import { ApplicationsEndpoint } from "@/api/endpoints/applications.endpoint";
 import { applicationResponse } from "@/api/schemas";
@@ -20,7 +21,7 @@ export class ApplicationsApi {
   async create(application: NewApplication & ApplicationInput): Promise<Application> {
     const response = await this.endpoint.create(application);
     if (response.status() !== 201) {
-      throw new Error(`Create failed: ${response.status()} ${await response.text()}`);
+      throw new Error(`Create failed: ${response.status()} ${await bodyForMessage(response)}`);
     }
     const { data } = applicationResponse.parse(await response.json());
     this.track(data.id);
@@ -35,7 +36,7 @@ export class ApplicationsApi {
     const response = await this.endpoint.delete(id);
     // 404 means it is already gone, which is the outcome cleanup wants.
     if (response.status() !== 204 && response.status() !== 404) {
-      throw new Error(`Delete ${id} failed: ${response.status()} ${await response.text()}`);
+      throw new Error(`Delete ${id} failed: ${response.status()} ${await bodyForMessage(response)}`);
     }
   }
 
