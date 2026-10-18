@@ -6,6 +6,8 @@ Playwright and TypeScript test suites for a live SaaS web application, a job app
 
 **Application under test:** https://rolequeue.vercel.app. Anyone can sign up, or use "Try the demo" for a private account with sample data.
 
+**Latest nightly report:** https://emaxiss.github.io/quality-engineering-lab/, every test from last night's run against production.
+
 <p align="center">
   <img src="docs/report.png" width="800" alt="Playwright HTML report: 79 of 79 tests passed against production, filtered to the security checks">
 </p>
@@ -49,7 +51,7 @@ Nightly run of 2026-10-07 against production. Every test creates uniquely named 
 
 ## Status
 
-**In place:** UI smoke suite, full UI flows (edit, archive, delete, search, filters, settings, exports), keyboard-only flows, visual regression, API suite with response schemas, security checks, cross-user isolation, Pact contracts, k6 performance smoke, WCAG scans, database upgrade tests, pull request checks, and the nightly run against production.
+**In place:** UI smoke suite, full UI flows (edit, archive, delete, search, filters, settings, exports), keyboard-only flows, visual regression, API suite with response schemas, security checks, cross-user isolation, Pact contracts, k6 performance smoke, WCAG scans, database upgrade tests, pull request checks, and the nightly run against production with its report published.
 
 **Planned:** screen reader flows, and more security cases (session expiry, rate limits).
 

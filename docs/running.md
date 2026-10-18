@@ -40,7 +40,17 @@ cp .env.example .env         # then fill in both accounts
 | Workflow | When | What |
 | --- | --- | --- |
 | `checks.yml` | Every pull request and push to `main` | `pnpm check` (types, lint, format) and a dry `playwright test --list`. Required to merge into `main` |
-| `nightly.yml` | Daily at 06:00 UTC, and on demand | The full suite against the live application, with the two test accounts from repository secrets, then the k6 smoke profile (k6 downloaded from its GitHub release and checked against a pinned SHA-256). No report artifacts: traces record typed input, and artifacts of a public repository can be downloaded by anyone |
+| `nightly.yml` | Daily at 06:00 UTC, and on demand | The full suite against the live application, with the two test accounts from repository secrets, then the k6 smoke profile (k6 downloaded from its GitHub release and checked against a pinned SHA-256), and the screenshot comparisons in the pinned Playwright image. The HTML report is published, see below |
+
+### Published report
+
+Every nightly run publishes its HTML report to https://emaxiss.github.io/quality-engineering-lab/, also after a failed run. The report is public, so it is built to hold nothing that signs anyone in:
+
+- `PUBLISH_REPORT=1` turns off traces, screenshots and videos, which record typed input and signed-in pages, and the page snapshot Playwright attaches to a failed test.
+- Sign-in fields are filled without a step that names the value (`src/support/secret-input.ts`), and API checks quote a response body only when the status is wrong, with tokens and email addresses blanked out.
+- `scripts/check-report.ts` then reads the whole report, including the test data zipped inside `index.html`, and fails if it finds either account's email or password, or anything shaped like a token. Only a clean report is published.
+
+Run the same check locally with `PUBLISH_REPORT=1 pnpm test`, then `node --env-file=.env scripts/check-report.ts`.
 
 CodeQL scans every pull request, and Dependabot watches the dependencies. The application's own pull request pipeline also runs these suites against a local build, including the upgrade test on every pull request that adds a migration.
 
