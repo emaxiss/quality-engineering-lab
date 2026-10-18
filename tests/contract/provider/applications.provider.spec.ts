@@ -1,3 +1,4 @@
+import { bodyForMessage } from "@/api/assertions";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { Verifier } from "@pact-foundation/pact";
 import { PACT_FILE, PROVIDER, States } from "@/contracts/pact.config";
@@ -13,7 +14,7 @@ test.describe("applications api contract (provider)", () => {
     const signIn = await login.post("/api/v1/auth/login", {
       data: { email: env.userEmail, password: env.userPassword },
     });
-    expect(signIn.status(), await signIn.text()).toBe(200);
+    expect(signIn.status(), signIn.ok() ? undefined : await bodyForMessage(signIn)).toBe(200);
     const { data } = (await signIn.json()) as { data: { session: { accessToken: string } } };
     const token = data.session.accessToken;
     await login.dispose();
