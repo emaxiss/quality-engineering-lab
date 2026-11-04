@@ -69,6 +69,7 @@ test.describe("finding applications", () => {
 
     await details.backButton.click();
     await expect(details.root).toBeHidden();
+    await applicationsPage.expectLoaded();
     await expect(page).toHaveURL(/\/applications$/);
   });
 });
