@@ -16,6 +16,8 @@ export class ApplicationsPage extends BasePage {
   readonly table = this.page.getByRole("region", { name: "Applications table" });
   readonly searchInput = this.page.getByRole("searchbox", { name: "Search applications" });
   readonly clearSearchButton = this.page.getByRole("button", { name: "Clear search" });
+  /** The polite live region that reads out how many applications are shown. */
+  readonly resultCount = this.page.getByText(/^\d+ applications?$/);
   readonly priorityFilter = this.page.getByRole("main").getByRole("combobox", { name: "Priority" });
   readonly closedButton = this.page.getByRole("button", { name: /^Closed\b/ });
   private readonly viewToggle = this.page.getByRole("group", { name: "Applications view" });
