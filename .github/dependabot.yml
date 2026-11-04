@@ -1,0 +1,34 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: tuesday
+    # Only propose versions that have been public for a week. A release that
+    # is pulled or found malicious usually is within days.
+    cooldown:
+      default-days: 7
+    groups:
+      dev-dependencies:
+        dependency-type: development
+    ignore:
+      # A Playwright bump needs new screenshot baselines and the matching
+      # container image digest in nightly.yml, so it is done by hand.
+      - dependency-name: "@playwright/test"
+      # A new Pact major gets the same supply chain review as the first install.
+      - dependency-name: "@pact-foundation/pact"
+        update-types: ["version-update:semver-major"]
+      # typescript-eslint does not support the TypeScript 7 compiler yet.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # Node's types track the Node version the suite runs on.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: tuesday
+    cooldown:
+      default-days: 7
