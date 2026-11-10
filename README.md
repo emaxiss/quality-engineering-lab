@@ -34,7 +34,7 @@ More in [Findings and decisions](docs/findings.md).
 | **Authorization** | Cross-account reads, searches, exports, updates and deletes must answer 404 and leave the owner's record unchanged | `tests/api/isolation.spec.ts` |
 | **Security** | OWASP Top 10 checks: mass assignment, forged tokens, CSV formula injection, cross-site writes, cookie flags, security headers, open redirect, stored script injection through the UI | `tests/api/security.spec.ts` |
 | **Contract testing** | Pact v4 consumer contract, verified against the live API with state handlers | `tests/contract/` |
-| **Accessibility** | axe scans against WCAG 2.2 AA with a known-issue list that cannot go stale, plus keyboard-only flows | `tests/a11y/`, `tests/ui/keyboard.spec.ts` |
+| **Accessibility** | axe scans against WCAG 2.2 AA with a known-issue list that cannot go stale, plus keyboard-only flows and screen reader checks (landmarks, heading outline, live announcements) | `tests/a11y/`, `tests/ui/keyboard.spec.ts` |
 | **Performance** | k6 profiles in TypeScript: a smoke run against production every night with per-endpoint thresholds, and a load profile for non-production deployments that refuses production | `perf/`, [docs](docs/performance.md) |
 | **Database migrations** | Seed and snapshot before a release, verify every record after it | `tests/migration/` |
 | **CI quality gates** | Types, type-aware ESLint and Prettier on every pull request, the full suite nightly against production, CodeQL | `.github/workflows/` |
@@ -51,9 +51,9 @@ Nightly run of 2026-10-07 against production. Every test creates uniquely named 
 
 ## Status
 
-**In place:** UI smoke suite, full UI flows (edit, archive, delete, search, filters, settings, exports), keyboard-only flows, visual regression, API suite with response schemas, security checks, cross-user isolation, Pact contracts, k6 performance smoke, WCAG scans, database upgrade tests, pull request checks, and the nightly run against production with its report published.
+**In place:** UI smoke suite, full UI flows (edit, archive, delete, search, filters, settings, exports), keyboard-only flows, screen reader checks, visual regression, API suite with response schemas, security checks, cross-user isolation, Pact contracts, k6 performance smoke, WCAG scans, database upgrade tests, pull request checks, and the nightly run against production with its report published.
 
-**Planned:** screen reader flows, and more security cases (session expiry, rate limits).
+**Planned:** more security cases (session expiry, rate limits).
 
 ## Quick start
 

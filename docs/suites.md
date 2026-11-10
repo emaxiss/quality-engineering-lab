@@ -76,5 +76,13 @@ Consumer-driven contract tests for the applications API, using Pact specificatio
 - Every violation, with the failing elements, is attached to the HTML report as `axe-violations.json`.
 - Known issues (`src/a11y/known-issues.ts`) are matched by rule and the element's visible text, not by CSS classes, and show up as annotations on the test. A new violation fails the scan, and so does a known issue that no longer reproduces.
 
-Automated rules cover only part of WCAG, so `tests/ui/keyboard.spec.ts` runs the main flows with the keyboard only: add an application, close the Add dialog with Escape, open a card with Enter and Space, move an application to another stage, and sort the list. Each step checks where focus is: inside a dialog when it opens, back on the control that opened it when it closes. Controls are reached with Tab, so one that drops out of the tab order fails the flow. Screen reader flows come next.
+Automated rules cover only part of WCAG, so `tests/ui/keyboard.spec.ts` runs the main flows with the keyboard only: add an application, close the Add dialog with Escape, open a card with Enter and Space, move an application to another stage, and sort the list. Each step checks where focus is: inside a dialog when it opens, back on the control that opened it when it closes. Controls are reached with Tab, so one that drops out of the tab order fails the flow.
+
+`tests/a11y/screen-reader.spec.ts` checks what a screen reader user navigates by and hears. axe runs only WCAG rules here, and landmark and heading order checks are best practices it leaves out.
+
+- On the same six pages, there is one main landmark, its first heading is the page's only level 1 heading, and no heading skips a level. The outline is read from the accessibility tree, as a screen reader gets it.
+- Moving between pages in the app announces the new page's title.
+- A search announces how many applications match, in a polite live region.
+
+Status messages after saving, archiving and updating the profile are found by their `status` role in the UI flows, so a message that stops being announced fails those tests.
 

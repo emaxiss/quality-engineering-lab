@@ -13,7 +13,7 @@ src/
     types.ts            types inferred from the schemas, plus request types
   data/                 factories for unique test data
   contracts/            Pact consumer client, pact settings, provider states
-  a11y/                 axe scan helper and the known accessibility issues
+  a11y/                 axe scan helper, the known accessibility issues, heading outline
   migration/            upgrade-test dataset and account snapshots
   fixtures/test.ts      test.extend: page objects and API clients as fixtures
   support/keyboard.ts   Tab-to-control and focus helpers for keyboard-only flows
