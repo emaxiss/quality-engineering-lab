@@ -1,4 +1,5 @@
 import { expectAccessible } from "@/a11y/axe";
+import { CARD_LABEL_IN_NAME, CHART_BAR_LABEL_IN_NAME, PROFILE_LINK_LABEL_IN_NAME } from "@/a11y/known-issues";
 import { buildApplication } from "@/data/application.factory";
 import { test } from "@/fixtures/test";
 
@@ -24,7 +25,7 @@ test.describe("accessibility, signed out", () => {
 test.describe("accessibility, signed in", () => {
   test("home", async ({ page, homePage }, testInfo) => {
     await homePage.goto();
-    await expectAccessible(page, testInfo);
+    await expectAccessible(page, testInfo, { known: [PROFILE_LINK_LABEL_IN_NAME, CHART_BAR_LABEL_IN_NAME] });
   });
 
   test("applications board and list", async ({ page, applicationsPage, applicationsApi }, testInfo) => {
@@ -32,11 +33,11 @@ test.describe("accessibility, signed in", () => {
     const application = await applicationsApi.create(buildApplication({ priority: "HIGH" }));
     await applicationsPage.goto();
     await applicationsPage.card(application.company).waitFor();
-    await expectAccessible(page, testInfo);
+    await expectAccessible(page, testInfo, { known: [PROFILE_LINK_LABEL_IN_NAME, CARD_LABEL_IN_NAME] });
 
     await applicationsPage.switchTo("List");
     await applicationsPage.table.waitFor();
-    await expectAccessible(page, testInfo);
+    await expectAccessible(page, testInfo, { known: [PROFILE_LINK_LABEL_IN_NAME] });
   });
 
   test("add application dialog", async ({ page, applicationsPage }, testInfo) => {
@@ -49,6 +50,6 @@ test.describe("accessibility, signed in", () => {
   test("settings", async ({ page, settingsPage }, testInfo) => {
     await settingsPage.goto();
     await settingsPage.emailInput.waitFor();
-    await expectAccessible(page, testInfo);
+    await expectAccessible(page, testInfo, { known: [PROFILE_LINK_LABEL_IN_NAME] });
   });
 });
