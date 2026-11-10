@@ -23,8 +23,11 @@ test.describe("accessibility, signed out", () => {
 });
 
 test.describe("accessibility, signed in", () => {
-  test("home", async ({ page, homePage }, testInfo) => {
+  test("home", async ({ page, homePage, applicationsApi }, testInfo) => {
+    // The charts only render once the account has an application.
+    await applicationsApi.create(buildApplication());
     await homePage.goto();
+    await homePage.chartBars.first().waitFor();
     await expectAccessible(page, testInfo, { known: [PROFILE_LINK_LABEL_IN_NAME, CHART_BAR_LABEL_IN_NAME] });
   });
 
