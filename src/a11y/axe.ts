@@ -19,6 +19,13 @@ export interface ScanOptions {
   known?: KnownIssue[];
 }
 
+const EMAIL = /[\w.+-]+@[\w-]+(\.[\w-]+)+/g;
+
+/** Violations as attached to the report. Failing elements' HTML can hold the account's email, so every address is replaced. */
+export function violationsForReport(violations: unknown): string {
+  return JSON.stringify(violations, null, 2).replace(EMAIL, "[email]");
+}
+
 /** Text of a failing element, read from the page through the selector axe reports for it. */
 async function elementText(page: Page, target: unknown[]): Promise<string> {
   const [selector] = target;
@@ -37,7 +44,7 @@ export async function expectAccessible(page: Page, testInfo: TestInfo, options: 
   if (options.include) scan = scan.include(options.include);
   const { violations } = await scan.analyze();
   await testInfo.attach("axe-violations.json", {
-    body: JSON.stringify(violations, null, 2),
+    body: violationsForReport(violations),
     contentType: "application/json",
   });
 
