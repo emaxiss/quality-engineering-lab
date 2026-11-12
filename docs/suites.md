@@ -8,7 +8,7 @@ Happy paths only. Negative and edge cases are in the API suite below.
 | --- | --- |
 | `api/health.spec.ts` | Health endpoint reports the service and database as ok |
 | `ui/public.spec.ts` | Landing page, links to the login form and the privacy page |
-| `ui/auth.spec.ts` | Log in, log out |
+| `ui/auth.spec.ts` | Log in, log out; after logout, Back stays on the login page and a copy of the old session cookie opens neither the app nor the API; a crafted login link cannot redirect to another site |
 | `ui/navigation.spec.ts` | Home loads, primary navigation reaches every section |
 | `ui/applications.spec.ts` | Board and list views, add an application, open its details |
 
