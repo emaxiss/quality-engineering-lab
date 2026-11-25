@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { applicationListResponse } from "@/api/schemas";
 import { env } from "@/config/env";
 import { buildApplication } from "@/data/application.factory";
 import { expect, test } from "@/fixtures/test";
@@ -198,5 +199,49 @@ test.describe("application lifecycle", () => {
     await applicationsPage.gotoApplication(created.id);
     await expect(details.root.getByText(notes, { exact: true }), "still text after a reload").toBeVisible();
     expect(await page.evaluate(() => (window as { __xss?: string }).__xss)).toBeUndefined();
+  });
+
+  test("a second submit while saving does not add the application twice", async ({
+    page,
+    applicationsPage,
+    applicationsEndpoint,
+    applicationsApi,
+  }) => {
+    const application = buildApplication();
+    const creates: Promise<void>[] = [];
+    // Hold the save for a moment, so the second submit lands while the first request is in flight.
+    await page.route(
+      (url) => url.pathname === env.applicationsApiPath,
+      (route) => {
+        if (route.request().method() !== "POST") return route.continue();
+        const held = new Promise<void>((resolve) => setTimeout(resolve, 1_500)).then(() => route.continue());
+        creates.push(held);
+        return held;
+      },
+    );
+
+    let saved: { id: string }[] | undefined;
+    try {
+      await applicationsPage.goto();
+      const dialog = await applicationsPage.openAddDialog();
+      await dialog.fill(application);
+      await dialog.submit();
+
+      const saving = dialog.root.getByRole("button", { name: "Saving…" });
+      await expect(saving).toBeDisabled();
+      await dialog.titleInput.press("Enter");
+
+      await expect(applicationsPage.details.title).toHaveText(application.title);
+      expect(creates, "create requests sent").toHaveLength(1);
+    } finally {
+      // Track whatever was saved, even when an assertion above failed, so nothing is left behind.
+      await Promise.all(creates);
+      const response = await applicationsEndpoint.list({ q: application.company });
+      saved = applicationListResponse
+        .parse(await response.json())
+        .data.filter((record) => record.company === application.company);
+      for (const { id } of saved) applicationsApi.track(id);
+    }
+    expect(saved ?? [], "applications saved").toHaveLength(1);
   });
 });
