@@ -28,7 +28,7 @@ Full user journeys beyond the happy paths, each on its own records. Every flow c
 | Spec | Covers |
 | --- | --- |
 | `api/auth.spec.ts` | Login returns a bearer token that authorizes requests and the same token altered is refused; the session cookie flags; logout with that token ends the session |
-| `api/account.spec.ts` | Signed-in account, 401 without a session, JSON and CSV export |
+| `api/account.spec.ts` | Signed-in account, 401 without a session, JSON and CSV export; commas, quotes, line breaks, accents, emoji and CJK text come back from the CSV export exactly as saved |
 | `api/isolation.spec.ts` | A second account cannot read, search for, export, update or delete another account's application: every attempt answers 404, and the owner's copy stays unchanged |
 | `api/dashboard.spec.ts` | Summary counts an application in its stage, source and due follow-ups; 401 without a session |
 | `api/applications.spec.ts` | Create with defaults, read, partial update, applied and closed dates on stage changes, delete |
