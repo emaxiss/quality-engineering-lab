@@ -33,7 +33,7 @@ Full user journeys beyond the happy paths, each on its own records. Every flow c
 | `api/isolation.spec.ts` | A second account cannot read, search for, export, update or delete another account's application: every attempt answers 404, and the owner's copy stays unchanged |
 | `api/dashboard.spec.ts` | Summary counts an application in its stage, source and due follow-ups; 401 without a session |
 | `api/applications.spec.ts` | Create with defaults, read, partial update, applied and closed dates on stage changes, delete |
-| `api/applications-list.spec.ts` | Search with pagination meta, stage filter, sort, empty page past the end |
+| `api/applications-list.spec.ts` | Search with pagination meta, stage filter, sort, empty page past the end; paging through rows that tie on the sort key returns each row once; page size 1 to 100, anything else refused |
 | `api/security.spec.ts` | Server-owned fields refused on create and update, a prototype pollution payload, malformed and oversized bodies, forged and malformed bearer tokens, CSV formula injection, cross-site cookie writes, security headers and HSTS |
 | `api/applications-errors.spec.ts` | Validation errors with field paths, malformed and unknown ids, 401 on every call without a session |
 | `api/concurrent-edits.spec.ts` | Partial updates to different fields sent at the same moment all persist, none overwrites another |
