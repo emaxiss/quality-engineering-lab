@@ -22,6 +22,7 @@ Full user journeys beyond the happy paths, each on its own records. Every flow c
 | `ui/find-applications.spec.ts` | Search narrows the board, lives in the URL and survives a reload; the priority filter combines with search; a link opens an application's details, and a link to a missing one says so |
 | `ui/settings.spec.ts` | A new display name is saved and Home greets the user by it (restored afterwards); display name and password rules are enforced before anything is sent; Download JSON and Download CSV contain the user's applications |
 | `ui/failure-states.spec.ts` | A save that fails (server error, a non-JSON proxy page, or a dropped connection) keeps the draft, says why, and saves on the next click once the connection is back. A board whose data fails to load says so in each stage instead of showing it empty, and Retry loads it |
+| `ui/add-form-phone.spec.ts` | On a 390 x 844 touch screen, the Add form fits without sideways scrolling, every control is on screen and at least 24 x 24 pixels, and a tapped-in application saves. Field text under 16px makes Safari on iPhone zoom in on focus (known defect, see below) |
 
 ## API suite
 
@@ -40,7 +41,7 @@ Full user journeys beyond the happy paths, each on its own records. Every flow c
 
 Tests for known defects assert the correct behavior and are marked `test.fail()`, so the suite stays green while the defect exists and turns red once it is fixed, as a reminder to remove the marker.
 
-None open.
+- **Add form zooms in on iPhone.** Its fields use 15px text, and Safari zooms the page in when a field with text under 16px gets focus. `ui/add-form-phone.spec.ts`.
 
 ## Visual regression
 
