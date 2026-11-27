@@ -19,7 +19,7 @@ Full user journeys beyond the happy paths, each on its own records. Every flow c
 | Spec | Covers |
 | --- | --- |
 | `ui/application-lifecycle.spec.ts` | Edit details, record that you applied, archive and reopen from Closed, delete after confirming. The Add form names missing fields and sends nothing; closing it with unsaved input asks first, and declining keeps the draft even on a second Escape. A second submit while the first save is still in flight adds nothing: the button reads Saving… and is disabled, and exactly one application is saved. Markup in a title or notes is shown as text and never runs (stored XSS) |
-| `ui/find-applications.spec.ts` | Search narrows the board, lives in the URL and survives a reload; the priority filter combines with search; a link opens an application's details, and a link to a missing one says so |
+| `ui/find-applications.spec.ts` | Search narrows the board, lives in the URL and survives a reload; the priority filter combines with search; a search with `_` shows only the card that contains it (known defect, see below); a link opens an application's details, and a link to a missing one says so |
 | `ui/settings.spec.ts` | A new display name is saved and Home greets the user by it (restored afterwards); display name and password rules are enforced before anything is sent; Download JSON and Download CSV contain the user's applications |
 | `ui/failure-states.spec.ts` | A save that fails (server error, a non-JSON proxy page, or a dropped connection) keeps the draft, says why, and saves on the next click once the connection is back. A board whose data fails to load says so in each stage instead of showing it empty, and Retry loads it |
 | `ui/concurrent-edits.spec.ts` | An edit form opened in one tab and saved after another tab changed the same application keeps that change (known defect, see below) |
@@ -34,6 +34,7 @@ Full user journeys beyond the happy paths, each on its own records. Every flow c
 | `api/isolation.spec.ts` | A second account cannot read, search for, export, update or delete another account's application: every attempt answers 404, and the owner's copy stays unchanged |
 | `api/dashboard.spec.ts` | Summary counts an application in its stage, source and due follow-ups; 401 without a session |
 | `api/applications.spec.ts` | Create with defaults, read, partial update, applied and closed dates on stage changes, delete |
+| `api/applications-search.spec.ts` | A search with `%`, `_`, `\`, `'` or `"` finds only the applications that contain that character (known defect for the first three, see below) |
 | `api/applications-list.spec.ts` | Search with pagination meta, stage filter, sort, empty page past the end; paging through rows that tie on the sort key returns each row once; page size 1 to 100, anything else refused |
 | `api/security.spec.ts` | Server-owned fields refused on create and update, a prototype pollution payload, malformed and oversized bodies, forged and malformed bearer tokens, CSV formula injection, cross-site cookie writes, security headers and HSTS |
 | `api/applications-errors.spec.ts` | Validation errors with field paths, malformed and unknown ids, 401 on every call without a session |
@@ -44,6 +45,7 @@ Full user journeys beyond the happy paths, each on its own records. Every flow c
 Tests for known defects assert the correct behavior and are marked `test.fail()`, so the suite stays green while the defect exists and turns red once it is fixed, as a reminder to remove the marker.
 
 - **Lost update from an older edit form.** The Edit details form sends every field on save, not only the ones changed. Open it in one tab, change the location in another tab, then save a new title in the first: the old location is written back without a warning. The API merges partial updates correctly (`api/concurrent-edits.spec.ts`), so sending only the changed fields, or refusing a save based on an older copy, fixes it. `ui/concurrent-edits.spec.ts`.
+- **Search treats some characters as a pattern.** `%` matches any text and `_` any single character, so a search for `100%` or `a_b` also returns applications without them; a search containing `\` finds nothing, even an application whose name contains one. Single and double quotes match as typed. `api/applications-search.spec.ts`, `ui/find-applications.spec.ts`.
 - **Add form zooms in on iPhone.** Its fields use 15px text, and Safari zooms the page in when a field with text under 16px gets focus. `ui/add-form-phone.spec.ts`.
 
 ## Visual regression
