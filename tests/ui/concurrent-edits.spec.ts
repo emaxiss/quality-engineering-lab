@@ -9,7 +9,6 @@ test.describe("concurrent edits", () => {
     applicationsEndpoint,
     applicationsApi,
   }) => {
-    test.fail(true, "Known defect: the edit form sends every field, so an older copy reverts newer changes");
     const { id } = await applicationsApi.create(buildApplication({ location: "Porto" }));
     const laterTab = new ApplicationsPage(page);
     const earlierTab = new ApplicationsPage(await page.context().newPage());

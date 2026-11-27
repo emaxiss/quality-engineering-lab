@@ -62,9 +62,8 @@ test.describe("Add form on a phone", () => {
   });
 
   // Safari on iPhone zooms the page in when a field with text under 16px gets focus, and the user
-  // has to zoom back out by hand. The app's viewport tag does not prevent it.
+  // has to zoom back out by hand.
   test("field text is at least 16px, so Safari does not zoom in on focus", async ({ applicationsPage }) => {
-    test.fail(true, "Known defect: Add form fields use 15px text");
     await applicationsPage.goto();
     await applicationsPage.addButton.tap();
     const fields = applicationsPage.addDialog.root.locator("input, select, textarea");

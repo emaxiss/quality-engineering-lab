@@ -86,9 +86,6 @@ test.describe("dates across time zones", () => {
       applicationsApi,
       applicationsEndpoint,
     }) => {
-      // Known defect: the app saves the picked day at noon in the browser's time zone, so a zone
-      // more than 12 hours away from it shows the day before or the day after.
-      test.fail(true, "known defect: a picked day moves by one in a distant time zone");
       const application = await applicationsApi.create(buildApplication({ status: "APPLIED" }));
 
       const picker = await openIn(browser, from, application.id);

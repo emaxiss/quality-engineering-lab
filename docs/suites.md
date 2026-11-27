@@ -19,12 +19,12 @@ Full user journeys beyond the happy paths, each on its own records. Every flow c
 | Spec | Covers |
 | --- | --- |
 | `ui/application-lifecycle.spec.ts` | Edit details, record that you applied, archive and reopen from Closed, delete after confirming. The Add form names missing fields and sends nothing; closing it with unsaved input asks first, and declining keeps the draft even on a second Escape. A second submit while the first save is still in flight adds nothing: the button reads Saving… and is disabled, and exactly one application is saved. Markup in a title or notes is shown as text and never runs (stored XSS) |
-| `ui/find-applications.spec.ts` | Search narrows the board, lives in the URL and survives a reload; the priority filter combines with search; a search with `_` shows only the card that contains it (known defect, see below); a link opens an application's details, and a link to a missing one says so |
+| `ui/find-applications.spec.ts` | Search narrows the board, lives in the URL and survives a reload; the priority filter combines with search; a search with `_` shows only the card that contains it; a link opens an application's details, and a link to a missing one says so |
 | `ui/settings.spec.ts` | A new display name is saved and Home greets the user by it (restored afterwards); display name and password rules are enforced before anything is sent; Download JSON and Download CSV contain the user's applications |
 | `ui/failure-states.spec.ts` | A save that fails (server error, a non-JSON proxy page, or a dropped connection) keeps the draft, says why, and saves on the next click once the connection is back. A board whose data fails to load says so in each stage instead of showing it empty, and Retry loads it |
-| `ui/concurrent-edits.spec.ts` | An edit form opened in one tab and saved after another tab changed the same application keeps that change (known defect, see below) |
-| `ui/dates-time-zones.spec.ts` | Applied and follow-up dates picked in a browser at UTC+14 or UTC-11 show the same days when reopened there; the same days show in the other zone and the API holds them as those days (known defect, see below) |
-| `ui/add-form-phone.spec.ts` | On a 390 x 844 touch screen, the Add form fits without sideways scrolling, every control is on screen and at least 24 x 24 pixels, and a tapped-in application saves. Field text under 16px makes Safari on iPhone zoom in on focus (known defect, see below) |
+| `ui/concurrent-edits.spec.ts` | An edit form opened in one tab and saved after another tab changed the same application keeps that change |
+| `ui/dates-time-zones.spec.ts` | Applied and follow-up dates picked in a browser at UTC+14 or UTC-11 show the same days when reopened there; the same days show in the other zone and the API holds them as those days |
+| `ui/add-form-phone.spec.ts` | On a 390 x 844 touch screen, the Add form fits without sideways scrolling, every control is on screen and at least 24 x 24 pixels, and a tapped-in application saves. Field text is at least 16px, so Safari on iPhone does not zoom in on focus |
 
 ## API suite
 
@@ -35,7 +35,7 @@ Full user journeys beyond the happy paths, each on its own records. Every flow c
 | `api/isolation.spec.ts` | A second account cannot read, search for, export, update or delete another account's application: every attempt answers 404, and the owner's copy stays unchanged |
 | `api/dashboard.spec.ts` | Summary counts an application in its stage, source and due follow-ups; 401 without a session |
 | `api/applications.spec.ts` | Create with defaults, read, partial update, applied and closed dates on stage changes, delete |
-| `api/applications-search.spec.ts` | A search with `%`, `_`, `\`, `'` or `"` finds only the applications that contain that character (known defect for the first three, see below) |
+| `api/applications-search.spec.ts` | A search with `%`, `_`, `\`, `'` or `"` finds only the applications that contain that character |
 | `api/applications-list.spec.ts` | Search with pagination meta, stage filter, sort, empty page past the end; paging through rows that tie on the sort key returns each row once; page size 1 to 100, anything else refused |
 | `api/security.spec.ts` | Server-owned fields refused on create and update, a prototype pollution payload, malformed and oversized bodies, forged and malformed bearer tokens, CSV formula injection, cross-site cookie writes, security headers and HSTS |
 | `api/applications-fields.spec.ts` | Field limits on create and update: 200 characters for company, title and location (an emoji counts as one), 10 tags of up to 40 characters, one over each refused with its field path and a refused update changing nothing; blank company or title refused; surrounding spaces trimmed; blank and repeated tags dropped; a minimum salary above the maximum refused, also when an update sends only one side |
@@ -46,10 +46,12 @@ Full user journeys beyond the happy paths, each on its own records. Every flow c
 
 Tests for known defects assert the correct behavior and are marked `test.fail()`, so the suite stays green while the defect exists and turns red once it is fixed, as a reminder to remove the marker.
 
-- **Lost update from an older edit form.** The Edit details form sends every field on save, not only the ones changed. Open it in one tab, change the location in another tab, then save a new title in the first: the old location is written back without a warning. The API merges partial updates correctly (`api/concurrent-edits.spec.ts`), so sending only the changed fields, or refusing a save based on an older copy, fixes it. `ui/concurrent-edits.spec.ts`.
-- **A picked date moves by a day in a distant time zone.** The applied and follow-up dates are saved at noon in the browser's time zone. Pick March 15 at UTC+14 and the API holds March 14 22:00 UTC, so the same account at UTC-11 sees March 14; picked at UTC-11, it shows March 16 at UTC+14. `ui/dates-time-zones.spec.ts`.
-- **Search treats some characters as a pattern.** `%` matches any text and `_` any single character, so a search for `100%` or `a_b` also returns applications without them; a search containing `\` finds nothing, even an application whose name contains one. Single and double quotes match as typed. `api/applications-search.spec.ts`, `ui/find-applications.spec.ts`.
-- **Add form zooms in on iPhone.** Its fields use 15px text, and Safari zooms the page in when a field with text under 16px gets focus. `ui/add-form-phone.spec.ts`.
+None open. Fixed after these tests found them:
+
+- **Lost update from an older edit form.** Edit details sent every field on save, so a form opened before a change made in another tab wrote the old value back. It now sends only the fields that changed. `ui/concurrent-edits.spec.ts`.
+- **A picked date moved by a day in a distant time zone.** Dates were saved at noon in the browser's time zone: March 15 picked at UTC+14 showed as March 14 at UTC-11. They are now calendar days, the same everywhere. `ui/dates-time-zones.spec.ts`.
+- **Search treated `%`, `_` and `\` as a pattern.** `%` matched any text, `_` any character, and `\` matched nothing. `api/applications-search.spec.ts`, `ui/find-applications.spec.ts`.
+- **The Add form zoomed in on iPhone.** Its fields used 15px text. `ui/add-form-phone.spec.ts`.
 
 ## Visual regression
 
