@@ -52,7 +52,6 @@ test.describe("finding applications", () => {
     applicationsPage,
     applicationsApi,
   }) => {
-    test.fail(true, "known defect: search treats _ as a pattern, not as text");
     const marker = randomUUID().slice(0, 8);
     const match = await applicationsApi.create(buildApplication({ company: `Search Co ${marker}_1` }));
     await applicationsApi.create(buildApplication({ company: `Search Co ${marker}x1` }));
