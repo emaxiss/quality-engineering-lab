@@ -37,6 +37,7 @@ Full user journeys beyond the happy paths, each on its own records. Every flow c
 | `api/applications-search.spec.ts` | A search with `%`, `_`, `\`, `'` or `"` finds only the applications that contain that character (known defect for the first three, see below) |
 | `api/applications-list.spec.ts` | Search with pagination meta, stage filter, sort, empty page past the end; paging through rows that tie on the sort key returns each row once; page size 1 to 100, anything else refused |
 | `api/security.spec.ts` | Server-owned fields refused on create and update, a prototype pollution payload, malformed and oversized bodies, forged and malformed bearer tokens, CSV formula injection, cross-site cookie writes, security headers and HSTS |
+| `api/applications-fields.spec.ts` | Field limits on create and update: 200 characters for company, title and location (an emoji counts as one), 10 tags of up to 40 characters, one over each refused with its field path and a refused update changing nothing; blank company or title refused; surrounding spaces trimmed; blank and repeated tags dropped; a minimum salary above the maximum refused, also when an update sends only one side |
 | `api/applications-errors.spec.ts` | Validation errors with field paths, malformed and unknown ids, 401 on every call without a session |
 | `api/concurrent-edits.spec.ts` | Partial updates to different fields sent at the same moment all persist, none overwrites another |
 
