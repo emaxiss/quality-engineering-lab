@@ -23,6 +23,7 @@ Full user journeys beyond the happy paths, each on its own records. Every flow c
 | `ui/settings.spec.ts` | A new display name is saved and Home greets the user by it (restored afterwards); display name and password rules are enforced before anything is sent; Download JSON and Download CSV contain the user's applications |
 | `ui/failure-states.spec.ts` | A save that fails (server error, a non-JSON proxy page, or a dropped connection) keeps the draft, says why, and saves on the next click once the connection is back. A board whose data fails to load says so in each stage instead of showing it empty, and Retry loads it |
 | `ui/concurrent-edits.spec.ts` | An edit form opened in one tab and saved after another tab changed the same application keeps that change (known defect, see below) |
+| `ui/dates-time-zones.spec.ts` | Applied and follow-up dates picked in a browser at UTC+14 or UTC-11 show the same days when reopened there; the same days show in the other zone and the API holds them as those days (known defect, see below) |
 | `ui/add-form-phone.spec.ts` | On a 390 x 844 touch screen, the Add form fits without sideways scrolling, every control is on screen and at least 24 x 24 pixels, and a tapped-in application saves. Field text under 16px makes Safari on iPhone zoom in on focus (known defect, see below) |
 
 ## API suite
@@ -45,6 +46,7 @@ Full user journeys beyond the happy paths, each on its own records. Every flow c
 Tests for known defects assert the correct behavior and are marked `test.fail()`, so the suite stays green while the defect exists and turns red once it is fixed, as a reminder to remove the marker.
 
 - **Lost update from an older edit form.** The Edit details form sends every field on save, not only the ones changed. Open it in one tab, change the location in another tab, then save a new title in the first: the old location is written back without a warning. The API merges partial updates correctly (`api/concurrent-edits.spec.ts`), so sending only the changed fields, or refusing a save based on an older copy, fixes it. `ui/concurrent-edits.spec.ts`.
+- **A picked date moves by a day in a distant time zone.** The applied and follow-up dates are saved at noon in the browser's time zone. Pick March 15 at UTC+14 and the API holds March 14 22:00 UTC, so the same account at UTC-11 sees March 14; picked at UTC-11, it shows March 16 at UTC+14. `ui/dates-time-zones.spec.ts`.
 - **Search treats some characters as a pattern.** `%` matches any text and `_` any single character, so a search for `100%` or `a_b` also returns applications without them; a search containing `\` finds nothing, even an application whose name contains one. Single and double quotes match as typed. `api/applications-search.spec.ts`, `ui/find-applications.spec.ts`.
 - **Add form zooms in on iPhone.** Its fields use 15px text, and Safari zooms the page in when a field with text under 16px gets focus. `ui/add-form-phone.spec.ts`.
 

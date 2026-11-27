@@ -15,6 +15,8 @@ export class ApplicationDetailsDialog {
   readonly editDetailsButton: Locator;
   readonly editNotesButton: Locator;
   readonly updateStageButton: Locator;
+  /** "Set follow-up" or "Change follow-up", depending on whether one is set. */
+  readonly followUpButton: Locator;
   readonly backButton: Locator;
   /** Confirmation shown after a save, such as "Saved." */
   readonly message: Locator;
@@ -25,6 +27,7 @@ export class ApplicationDetailsDialog {
   readonly markApplied: EditorDialog;
   readonly reopen: EditorDialog;
   readonly confirmDelete: EditorDialog;
+  readonly followUp: EditorDialog;
 
   constructor(page: Page) {
     this.root = page.getByRole("dialog", { name: "Application details" });
@@ -39,6 +42,7 @@ export class ApplicationDetailsDialog {
     this.editDetailsButton = this.root.getByRole("button", { name: "Edit details" });
     this.editNotesButton = this.root.getByRole("button", { name: "Edit notes" });
     this.updateStageButton = this.root.getByRole("button", { name: "Update stage" });
+    this.followUpButton = this.root.getByRole("button", { name: / follow-up$/ });
     this.backButton = this.root.getByRole("button", { name: "Back to applications" });
     this.message = this.root.getByRole("status");
 
@@ -48,6 +52,7 @@ export class ApplicationDetailsDialog {
     this.markApplied = new EditorDialog(page, "Record your application", "Confirm applied");
     this.reopen = new EditorDialog(page, "Reopen application", "Reopen as saved");
     this.confirmDelete = new EditorDialog(page, "Delete application", "Delete application");
+    this.followUp = new EditorDialog(page, "Follow-up date", "Save follow-up");
   }
 
   /** Value next to a label in the facts list, such as "Location" or "Priority". */
