@@ -48,6 +48,21 @@ test.describe("finding applications", () => {
     await expect(applicationsPage.priorityFilter).toHaveValue("");
   });
 
+  test("a search with an underscore shows only the application that contains it", async ({
+    applicationsPage,
+    applicationsApi,
+  }) => {
+    test.fail(true, "known defect: search treats _ as a pattern, not as text");
+    const marker = randomUUID().slice(0, 8);
+    const match = await applicationsApi.create(buildApplication({ company: `Search Co ${marker}_1` }));
+    await applicationsApi.create(buildApplication({ company: `Search Co ${marker}x1` }));
+
+    await applicationsPage.goto();
+    await applicationsPage.searchInput.fill(`${marker}_`);
+    await expect(applicationsPage.card(match.company)).toBeVisible();
+    await expect(applicationsPage.cards).toHaveCount(1);
+  });
+
   test("an application link opens its details over the board", async ({ page, applicationsPage, applicationsApi }) => {
     const created = await applicationsApi.create(buildApplication());
     const { details } = applicationsPage;
